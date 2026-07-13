@@ -2,321 +2,217 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
     <title>NoteVault</title>
     <link rel="stylesheet" href="styles.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
 </head>
 <body>
 
-    <!-- LOGIN -->
-    <div class="login-overlay" id="loginOverlay">
-        <div class="login-bg" id="loginBg"></div>
+    <!-- ===== LOGIN ===== -->
+    <div class="login-screen" id="loginScreen">
+        <div class="login-glow"></div>
         <div class="login-card">
-            <div class="login-logo">
-                <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+            <div class="login-brand">
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#FF3B3B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
             </div>
             <h1>NoteVault</h1>
-            <p class="login-sub">Your secure digital notebook</p>
+            <p>Secure digital notebook</p>
             <form id="loginForm" autocomplete="off">
-                <div class="field">
-                    <label for="loginEmail">
-                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>
-                        Email
-                    </label>
-                    <input type="email" class="input" id="loginEmail" placeholder="you@example.com" required>
+                <div class="lg-field">
+                    <label>Email</label>
+                    <input type="email" id="lgEmail" placeholder="you@email.com" required>
                 </div>
-                <div class="field">
-                    <label for="loginPassword">
-                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-                        Password
-                    </label>
-                    <div class="pw-wrap">
-                        <input type="password" class="input" id="loginPassword" placeholder="Enter password" required>
-                        <button type="button" class="pw-eye" id="pwToggle" tabindex="-1">
-                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" id="eyeSvg"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                <div class="lg-field">
+                    <label>Password</label>
+                    <div class="lg-pw">
+                        <input type="password" id="lgPass" placeholder="••••••••" required>
+                        <button type="button" id="lgEye" tabindex="-1">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" id="eyeIco"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
                         </button>
                     </div>
                 </div>
-                <button type="submit" class="login-btn" id="loginBtn">
-                    <span id="loginText">Sign In</span>
-                    <span class="spinner" id="loginSpinner"></span>
+                <button type="submit" class="lg-btn" id="lgBtn">
+                    <span id="lgBtnTxt">Sign In</span>
+                    <span class="lg-spin" id="lgSpin"></span>
                 </button>
-                <div class="login-err" id="loginErr">
-                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
-                    <span id="loginErrMsg"></span>
-                </div>
+                <div class="lg-err" id="lgErr"><span id="lgErrTxt"></span></div>
             </form>
         </div>
     </div>
 
-    <!-- APP -->
+    <!-- ===== APP ===== -->
     <div class="app" id="app">
 
         <!-- SIDEBAR -->
         <aside class="sidebar" id="sidebar">
-            <div class="sb-top">
-                <div class="sb-brand">
-                    <div class="sb-logo">
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
-                    </div>
-                    <span class="sb-title">NoteVault</span>
+            <div class="sb-head">
+                <div class="sb-logo">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#FF3B3B" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+                    <span>NoteVault</span>
                 </div>
-                <button class="sb-close" id="sbClose">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                <button class="sb-x" id="sbX">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
                 </button>
             </div>
 
             <div class="sb-search">
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-                <input type="text" placeholder="Search notes..." id="searchBox">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                <input type="text" placeholder="Search..." id="searchBox">
             </div>
 
             <nav class="sb-nav">
-                <button class="sb-item active" data-f="all" id="fAll">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+                <button class="sb-link active" data-f="all">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
                     <span>All Notes</span>
                     <em id="cAll">0</em>
                 </button>
-                <button class="sb-item" data-f="pinned" id="fPinned">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 17l-5 3 1.5-5.6L4 10.5l5.8-.5L12 5l2.2 5 5.8.5-4.5 3.9L17 20z"/></svg>
+                <button class="sb-link" data-f="pinned">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 17l-5 3 1.5-5.6L4 10.5l5.8-.5L12 5l2.2 5 5.8.5-4.5 3.9L17 20z"/></svg>
                     <span>Pinned</span>
-                    <em id="cPinned">0</em>
+                    <em id="cPin">0</em>
                 </button>
-                <button class="sb-item" data-f="archived" id="fArchived">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="21 8 21 21 3 21 3 8"/><rect x="1" y="3" width="22" height="5"/><line x1="10" y1="12" x2="14" y2="12"/></svg>
+                <button class="sb-link" data-f="archived">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="21 8 21 21 3 21 3 8"/><rect x="1" y="3" width="22" height="5"/></svg>
                     <span>Archived</span>
-                    <em id="cArchived">0</em>
+                    <em id="cArch">0</em>
                 </button>
             </nav>
 
             <div class="sb-folders">
-                <div class="sb-sec-head">
+                <div class="sb-fhead">
                     <span>FOLDERS</span>
-                    <button class="sb-sec-add" id="addFolder" title="New folder">
-                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                    <button id="addFolder">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
                     </button>
                 </div>
-                <div class="folders-scroll" id="foldersBox"></div>
+                <div class="sb-flist" id="fList"></div>
             </div>
 
-            <div class="sb-footer">
+            <div class="sb-foot">
                 <div class="sb-user">
-                    <div class="sb-avatar" id="uAvatar">U</div>
-                    <div class="sb-uinfo">
-                        <span class="sb-uname" id="uName">User</span>
-                        <span class="sb-ustatus"><i></i>Online</span>
+                    <div class="sb-av" id="uAv">U</div>
+                    <div class="sb-udet">
+                        <span id="uName">User</span>
+                        <small><i></i>Online</small>
                     </div>
                 </div>
-                <button class="sb-logout" id="logoutBtn" title="Sign out">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+                <button id="logoutBtn" title="Sign out">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
                 </button>
             </div>
         </aside>
 
-        <div class="mob-shade" id="mobShade"></div>
+        <div class="shade" id="shade"></div>
 
         <!-- NOTES LIST -->
-        <section class="list-panel" id="listPanel">
+        <section class="list" id="list">
             <div class="list-head">
                 <div class="list-top">
-                    <button class="hamburger" id="hamburger">
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+                    <button class="ham" id="ham">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
                     </button>
                     <h2 id="listTitle">All Notes</h2>
-                    <button class="add-note-btn" id="addNote" title="Create note">
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                    <button class="new-btn" id="newNote">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
                     </button>
                 </div>
-                <div class="sort-bar">
-                    <button class="sort-btn active" data-s="updated">
-                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-                        Recent
-                    </button>
-                    <button class="sort-btn" data-s="created">
-                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-                        Created
-                    </button>
-                    <button class="sort-btn" data-s="title">
-                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19h16M4 15h12M4 11h16M4 7h8"/></svg>
-                        A–Z
-                    </button>
+                <div class="sorts">
+                    <button class="sort active" data-s="updated">Recent</button>
+                    <button class="sort" data-s="created">Created</button>
+                    <button class="sort" data-s="title">A–Z</button>
                 </div>
             </div>
-            <div class="list-scroll" id="notesList"></div>
+            <div class="list-body" id="notesList"></div>
         </section>
 
         <!-- EDITOR -->
         <main class="editor" id="editor">
+
+            <!-- Blank state -->
             <div class="ed-blank" id="edBlank">
-                <div class="ed-blank-icon">
-                    <svg width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
-                </div>
+                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
                 <h2>Select a note</h2>
-                <p>Choose a note from the list or create a new one</p>
-                <button class="ed-blank-btn" id="blankCreate">
-                    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                <p>Pick one from the list or create new</p>
+                <button id="blankNew">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
                     New Note
                 </button>
             </div>
 
-            <div class="ed-live" id="edLive">
-                <div class="ed-bar">
-                    <div class="ed-bar-l">
+            <!-- Active editor -->
+            <div class="ed-active" id="edActive">
+
+                <!-- Top bar -->
+                <div class="ed-top">
+                    <div class="ed-top-l">
                         <button class="ed-back" id="edBack">
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
                         </button>
-                        <span class="ed-status" id="edStatus">
-                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
-                            <span id="edStatusTxt">Saved</span>
-                        </span>
+                        <span class="ed-saved" id="edSaved">Saved</span>
                     </div>
-                    <div class="ed-bar-r">
-                        <button class="ed-btn" id="btnPin" title="Pin">
-                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 17l-5 3 1.5-5.6L4 10.5l5.8-.5L12 5l2.2 5 5.8.5-4.5 3.9L17 20z"/></svg>
-                        </button>
-                        <button class="ed-btn" id="btnArchive" title="Archive">
-                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="21 8 21 21 3 21 3 8"/><rect x="1" y="3" width="22" height="5"/><line x1="10" y1="12" x2="14" y2="12"/></svg>
-                        </button>
-                        <button class="ed-btn ed-edit-btn" id="btnEdit" title="Edit">
-                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-                            <span>Edit</span>
-                        </button>
-                        <button class="ed-btn ed-del-btn" id="btnDelete" title="Delete">
-                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
-                        </button>
+                    <div class="ed-top-r">
+                        <button class="ed-act" id="bPin" title="Pin"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 17l-5 3 1.5-5.6L4 10.5l5.8-.5L12 5l2.2 5 5.8.5-4.5 3.9L17 20z"/></svg></button>
+                        <button class="ed-act" id="bArch" title="Archive"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="21 8 21 21 3 21 3 8"/><rect x="1" y="3" width="22" height="5"/></svg></button>
+                        <button class="ed-act ed-edit" id="bEdit" title="Edit"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg><span>Edit</span></button>
+                        <button class="ed-act ed-del" id="bDel" title="Delete"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button>
                     </div>
                 </div>
 
-                <div class="ed-meta" id="edMeta">
-                    <div class="meta-i">
-                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
-                        <select id="edFolder"></select>
-                    </div>
-                    <div class="meta-i">
-                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7V4h16v3"/><path d="M9 20h6"/><path d="M12 4v16"/></svg>
-                        <span id="edWords">0 words</span>
-                    </div>
-                    <div class="meta-i">
-                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-                        <span id="edChars">0 chars</span>
-                    </div>
+                <!-- Meta -->
+                <div class="ed-meta">
+                    <select id="edFolder"></select>
+                    <span id="edWc">0 words</span>
+                    <span id="edCc">0 chars</span>
                 </div>
 
-                <!-- TOOLBAR -->
-                <div class="toolbar" id="toolbar">
-                    <div class="tb-group">
-                        <select class="tb-sel" id="tbHeading" title="Style">
+                <!-- Toolbar (scrollable on mobile) -->
+                <div class="tb-wrap" id="tbWrap">
+                    <div class="tb" id="toolbar">
+                        <select class="tb-select" id="tbHead">
                             <option value="">Style</option>
-                            <option value="H1">Heading 1</option>
-                            <option value="H2">Heading 2</option>
-                            <option value="H3">Heading 3</option>
-                            <option value="H4">Heading 4</option>
-                            <option value="P">Paragraph</option>
+                            <option value="H1">H1</option>
+                            <option value="H2">H2</option>
+                            <option value="H3">H3</option>
+                            <option value="H4">H4</option>
+                            <option value="P">Body</option>
                         </select>
-                    </div>
-                    <i class="tb-sep"></i>
-                    <div class="tb-group">
-                        <select class="tb-sel" id="tbSize" title="Size">
+                        <select class="tb-select" id="tbSize">
                             <option value="">Size</option>
-                            <option value="1">10px</option>
-                            <option value="2">13px</option>
-                            <option value="3">16px</option>
-                            <option value="4">18px</option>
-                            <option value="5">24px</option>
-                            <option value="6">32px</option>
-                            <option value="7">48px</option>
+                            <option value="1">XS</option>
+                            <option value="2">S</option>
+                            <option value="3">M</option>
+                            <option value="4">L</option>
+                            <option value="5">XL</option>
+                            <option value="6">2XL</option>
+                            <option value="7">3XL</option>
                         </select>
-                    </div>
-                    <i class="tb-sep"></i>
-                    <div class="tb-group">
-                        <button class="tb-btn" data-c="bold" title="Bold (Ctrl+B)">
-                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M6 4h8a4 4 0 0 1 4 4 4 4 0 0 1-4 4H6z"/><path d="M6 12h9a4 4 0 0 1 4 4 4 4 0 0 1-4 4H6z"/></svg>
+                        <span class="tb-div"></span>
+                        <button class="tb-b" data-c="bold" title="Bold"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M6 4h8a4 4 0 0 1 4 4 4 4 0 0 1-4 4H6z"/><path d="M6 12h9a4 4 0 0 1 4 4 4 4 0 0 1-4 4H6z"/></svg></button>
+                        <button class="tb-b" data-c="italic" title="Italic"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="19" y1="4" x2="10" y2="4"/><line x1="14" y1="20" x2="5" y2="20"/><line x1="15" y1="4" x2="9" y2="20"/></svg></button>
+                        <button class="tb-b" data-c="underline" title="Underline"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 3v7a6 6 0 0 0 6 6 6 6 0 0 0 6-6V3"/><line x1="4" y1="21" x2="20" y2="21"/></svg></button>
+                        <button class="tb-b" data-c="strikeThrough" title="Strike"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 4H9a3 3 0 0 0 0 6h6"/><line x1="4" y1="12" x2="20" y2="12"/><path d="M8 20h7a3 3 0 0 0 0-6h-1"/></svg></button>
+                        <span class="tb-div"></span>
+                        <button class="tb-b" data-c="justifyLeft" title="Left"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="17" y1="10" x2="3" y2="10"/><line x1="21" y1="6" x2="3" y2="6"/><line x1="17" y1="14" x2="3" y2="14"/><line x1="21" y1="18" x2="3" y2="18"/></svg></button>
+                        <button class="tb-b" data-c="justifyCenter" title="Center"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="10" x2="6" y2="10"/><line x1="21" y1="6" x2="3" y2="6"/><line x1="18" y1="14" x2="6" y2="14"/><line x1="21" y1="18" x2="3" y2="18"/></svg></button>
+                        <button class="tb-b" data-c="justifyRight" title="Right"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="21" y1="10" x2="7" y2="10"/><line x1="21" y1="6" x2="3" y2="6"/><line x1="21" y1="14" x2="7" y2="14"/><line x1="21" y1="18" x2="3" y2="18"/></svg></button>
+                        <span class="tb-div"></span>
+                        <button class="tb-b" data-c="insertUnorderedList" title="Bullets"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg></button>
+                        <button class="tb-b" data-c="insertOrderedList" title="Numbers"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="10" y1="6" x2="21" y2="6"/><line x1="10" y1="12" x2="21" y2="12"/><line x1="10" y1="18" x2="21" y2="18"/><path d="M4 6h1v4"/><path d="M4 10h2"/><path d="M6 18H4c0-1 2-2 2-3s-1-1.5-2-1"/></svg></button>
+                        <span class="tb-div"></span>
+                        <button class="tb-b" id="tbTextColor" title="Text Color">
+                            <span class="tb-color-dot" id="tcPreview" style="background:#FF3B3B;">A</span>
                         </button>
-                        <button class="tb-btn" data-c="italic" title="Italic (Ctrl+I)">
-                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="19" y1="4" x2="10" y2="4"/><line x1="14" y1="20" x2="5" y2="20"/><line x1="15" y1="4" x2="9" y2="20"/></svg>
+                        <button class="tb-b" id="tbHighlight" title="Highlight">
+                            <span class="tb-color-dot tb-hl-dot" id="hlPreview" style="background:#FBBF24;"></span>
                         </button>
-                        <button class="tb-btn" data-c="underline" title="Underline (Ctrl+U)">
-                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 3v7a6 6 0 0 0 6 6 6 6 0 0 0 6-6V3"/><line x1="4" y1="21" x2="20" y2="21"/></svg>
-                        </button>
-                        <button class="tb-btn" data-c="strikeThrough" title="Strike">
-                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 4H9a3 3 0 0 0 0 6h6"/><line x1="4" y1="12" x2="20" y2="12"/><path d="M8 20h7a3 3 0 0 0 0-6h-1"/></svg>
-                        </button>
-                    </div>
-                    <i class="tb-sep"></i>
-                    <div class="tb-group">
-                        <button class="tb-btn" data-c="justifyLeft" title="Left">
-                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="17" y1="10" x2="3" y2="10"/><line x1="21" y1="6" x2="3" y2="6"/><line x1="17" y1="14" x2="3" y2="14"/><line x1="21" y1="18" x2="3" y2="18"/></svg>
-                        </button>
-                        <button class="tb-btn" data-c="justifyCenter" title="Center">
-                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="10" x2="6" y2="10"/><line x1="21" y1="6" x2="3" y2="6"/><line x1="18" y1="14" x2="6" y2="14"/><line x1="21" y1="18" x2="3" y2="18"/></svg>
-                        </button>
-                        <button class="tb-btn" data-c="justifyRight" title="Right">
-                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="21" y1="10" x2="7" y2="10"/><line x1="21" y1="6" x2="3" y2="6"/><line x1="21" y1="14" x2="7" y2="14"/><line x1="21" y1="18" x2="3" y2="18"/></svg>
-                        </button>
-                    </div>
-                    <i class="tb-sep"></i>
-                    <div class="tb-group">
-                        <button class="tb-btn" data-c="insertUnorderedList" title="Bullets">
-                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
-                        </button>
-                        <button class="tb-btn" data-c="insertOrderedList" title="Numbers">
-                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="10" y1="6" x2="21" y2="6"/><line x1="10" y1="12" x2="21" y2="12"/><line x1="10" y1="18" x2="21" y2="18"/><path d="M4 6h1v4"/><path d="M4 10h2"/><path d="M6 18H4c0-1 2-2 2-3s-1-1.5-2-1"/></svg>
-                        </button>
-                    </div>
-                    <i class="tb-sep"></i>
-                    <div class="tb-group">
-                        <div class="cp-wrap" id="tcWrap">
-                            <button class="tb-btn cp-trigger" id="tcTrig" title="Text color">
-                                <span class="cp-dot" id="tcDot" style="background:#fff;">A</span>
-                            </button>
-                            <div class="cp-popup" id="tcPopup">
-                                <div class="cp-label">Text Color</div>
-                                <div class="cp-grid" id="tcGrid"></div>
-                                <div class="cp-custom">
-                                    <input type="color" id="tcWheel" value="#ffffff">
-                                    <input type="text" class="cp-hex" id="tcHex" value="#FFFFFF" maxlength="7">
-                                    <button class="cp-apply" id="tcApply">Set</button>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="cp-wrap" id="hlWrap">
-                            <button class="tb-btn cp-trigger" id="hlTrig" title="Highlight">
-                                <span class="cp-dot hl-dot" id="hlDot" style="background:#FBBF24;">
-                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#000" stroke-width="2.5"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
-                                </span>
-                            </button>
-                            <div class="cp-popup" id="hlPopup">
-                                <div class="cp-label">Highlight Color</div>
-                                <div class="cp-grid" id="hlGrid"></div>
-                                <div class="cp-custom">
-                                    <input type="color" id="hlWheel" value="#fbbf24">
-                                    <input type="text" class="cp-hex" id="hlHex" value="#FBBF24" maxlength="7">
-                                    <button class="cp-apply" id="hlApply">Set</button>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <i class="tb-sep"></i>
-                    <div class="tb-group">
-                        <button class="tb-btn" id="btnLink" title="Insert Link (Ctrl+K)">
-                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
-                        </button>
-                        <button class="tb-btn" id="btnUnlink" title="Remove Link">
-                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/><line x1="2" y1="2" x2="22" y2="22" stroke="#EF4444"/></svg>
-                        </button>
-                    </div>
-                    <i class="tb-sep"></i>
-                    <div class="tb-group">
-                        <button class="tb-btn" data-c="removeFormat" title="Clear">
-                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7V4h16v3"/><path d="M9 20h6"/><path d="M12 4v16"/><line x1="3" y1="3" x2="21" y2="21" stroke="#EF4444" stroke-width="2"/></svg>
-                        </button>
-                        <button class="tb-btn" data-c="undo" title="Undo (Ctrl+Z)">
-                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg>
-                        </button>
-                        <button class="tb-btn" data-c="redo" title="Redo (Ctrl+Y)">
-                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.13-9.36L23 10"/></svg>
-                        </button>
+                        <span class="tb-div"></span>
+                        <button class="tb-b" id="tbLink" title="Link (Ctrl+K)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg></button>
+                        <button class="tb-b" id="tbUnlink" title="Unlink"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/><line x1="2" y1="2" x2="22" y2="22" stroke="#FF3B3B"/></svg></button>
+                        <span class="tb-div"></span>
+                        <button class="tb-b" data-c="removeFormat" title="Clear"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7V4h16v3"/><path d="M9 20h6"/><path d="M12 4v16"/><line x1="3" y1="3" x2="21" y2="21" stroke="#FF3B3B"/></svg></button>
+                        <button class="tb-b" data-c="undo" title="Undo"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg></button>
+                        <button class="tb-b" data-c="redo" title="Redo"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.13-9.36L23 10"/></svg></button>
                     </div>
                 </div>
 
@@ -328,8 +224,25 @@
         </main>
     </div>
 
+    <!-- COLOR PANEL (slides up on mobile, positioned on desktop) -->
+    <div class="cpanel-shade" id="cpShade"></div>
+    <div class="cpanel" id="cpanel">
+        <div class="cpanel-head">
+            <span id="cpTitle">Text Color</span>
+            <button id="cpClose">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>
+        </div>
+        <div class="cpanel-grid" id="cpGrid"></div>
+        <div class="cpanel-custom">
+            <input type="color" id="cpWheel" value="#ff3b3b">
+            <input type="text" id="cpHex" value="#FF3B3B" maxlength="7" placeholder="#FF3B3B">
+            <button id="cpApply">Apply</button>
+        </div>
+    </div>
+
     <!-- MODAL -->
-    <div class="modal-shade" id="modalShade">
+    <div class="modal-bg" id="modalBg">
         <div class="modal" id="modal"></div>
     </div>
 

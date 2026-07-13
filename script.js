@@ -1,407 +1,225 @@
 // ============================================================
-// NOTEVAULT — SUPABASE AUTH VERSION (LINK FIX v2)
+// NOTEVAULT — BLACK & RED THEME — SUPABASE AUTH
 // ============================================================
 
 const SUPA_URL = 'https://rgzvsxaknntpqvtoqbuo.supabase.co';
 const SUPA_KEY = 'sb_publishable_kQbhLSFLKT3QQhIOoZp59Q_56C-vSbZ';
-
 const sb = window.supabase.createClient(SUPA_URL, SUPA_KEY);
 
-// ==================== STATE ====================
+// ===== STATE =====
 const S = {
-    user: null,
-    notes: [],
-    folders: [],
-    cur: null,
-    filter: 'all',
-    folder: null,
-    sort: 'updated',
-    editing: false,
-    search: '',
-    saveT: null,
-    saving: false,
-    mobile: window.innerWidth <= 768,
-    savedRange: null
+    user: null, notes: [], folders: [], cur: null,
+    filter: 'all', folder: null, sort: 'updated',
+    editing: false, search: '', saveT: null,
+    saving: false, range: null, cpMode: null,
+    mobile: window.innerWidth <= 768
 };
 
 const q = s => document.querySelector(s);
 const qa = s => document.querySelectorAll(s);
 
-// ==================== PALETTES ====================
 const TC = [
-    '#FFFFFF','#E2E5F0','#9BA1BD','#6B7194',
-    '#EF4444','#F97316','#F59E0B','#22C55E',
-    '#3B82F6','#6366F1','#8B5CF6','#EC4899',
-    '#FCA5A5','#FDBA74','#FDE68A','#86EFAC',
+    '#FFFFFF','#D4D4D4','#999999','#666666',
+    '#FF3B3B','#F97316','#FBBF24','#34D399',
+    '#60A5FA','#818CF8','#A78BFA','#F472B6',
+    '#FCA5A5','#FDBA74','#FDE68A','#6EE7B7',
     '#93C5FD','#A5B4FC','#C4B5FD','#F9A8D4',
-    '#DC2626','#EA580C','#D97706','#16A34A',
-    '#2563EB','#4F46E5','#7C3AED','#DB2777'
+    '#B91C1C','#C2410C','#A16207','#047857',
+    '#1D4ED8','#4338CA','#6D28D9','#BE185D'
 ];
+
 const HC = [
     'transparent','#FEF3C7','#FED7AA','#FECACA',
-    '#FCE7F3','#EDE9FE','#C7D2FE','#BFDBFE',
-    '#A7F3D0','#D9F99D','#FEF08A','#FFEDD5',
+    '#FCE7F3','#EDE9FE','#DBEAFE','#D1FAE5',
     '#FBBF24','#FB923C','#F87171','#E879F9',
     '#818CF8','#38BDF8','#34D399','#A3E635',
-    '#991B1B','#9A3412','#92400E','#166534',
-    '#1E3A8A','#312E81','#581C87','#831843'
+    '#78350F','#7C2D12','#831843','#1E3A8A',
+    '#312E81','#581C87','#064E3B','#3F6212'
 ];
-const FC = ['#7C6EF6','#3B82F6','#06B6D4','#22C55E','#F59E0B','#EF4444','#EC4899','#8B5CF6','#14B8A6','#F97316','#6366F1','#10B981'];
-const FI = ['📁','📂','📋','📌','🏷️','💼','🎯','💡','📚','⭐','🔖','📎','💻','🎨','🏠','💰','🏥','✈️','🎵','📷','🍔','🏃','📐','🔬'];
 
-// ==================== INIT ====================
+const FC = ['#FF3B3B','#60A5FA','#34D399','#FBBF24','#F97316','#A78BFA','#F472B6','#818CF8','#38BDF8','#FB923C'];
+
+// ===== INIT =====
 document.addEventListener('DOMContentLoaded', () => {
-    particles();
-    colorGrids();
     bind();
     initAuth();
 });
 
-function particles() {
-    const c = q('#loginBg');
-    if (!c) return;
-    for (let i = 0; i < 28; i++) {
-        const b = document.createElement('b');
-        b.style.left = Math.random() * 100 + '%';
-        b.style.animationDuration = (9 + Math.random() * 14) + 's';
-        b.style.animationDelay = Math.random() * 10 + 's';
-        const s = 2 + Math.random() * 4;
-        b.style.width = b.style.height = s + 'px';
-        c.appendChild(b);
-    }
-}
-
-function colorGrids() {
-    makeGrid('tcGrid', TC, 'tc');
-    makeGrid('hlGrid', HC, 'hl');
-}
-
-function makeGrid(id, arr, t) {
-    const g = q('#' + id);
-    if (!g) return;
-    g.innerHTML = '';
-    arr.forEach(c => {
-        const b = document.createElement('button');
-        b.className = 'cp-sw' + (c === 'transparent' ? ' none' : '');
-        if (c !== 'transparent') b.style.background = c;
-        b.dataset.c = c;
-        b.addEventListener('mousedown', e => e.preventDefault());
-        b.addEventListener('click', () => {
-            if (t === 'tc') setTC(c);
-            else setHL(c);
-        });
-        g.appendChild(b);
-    });
-}
-
-// ==================== SAVE / RESTORE SELECTION ====================
-function saveSelection() {
-    const sel = window.getSelection();
-    if (sel.rangeCount > 0) {
-        S.savedRange = sel.getRangeAt(0).cloneRange();
-    }
-}
-
-function restoreSelection() {
-    if (!S.savedRange) return false;
-    const sel = window.getSelection();
-    sel.removeAllRanges();
-    sel.addRange(S.savedRange);
-    return true;
-}
-
-// ==================== AUTH ====================
 async function initAuth() {
-    try {
-        const { data: { session } } = await sb.auth.getSession();
-        if (session) {
-            S.user = session.user;
-            enter();
-        }
-        sb.auth.onAuthStateChange((_, session) => {
-            if (session) S.user = session.user;
-        });
-    } catch (e) {
-        console.error('Auth init error:', e);
-    }
+    const { data: { session } } = await sb.auth.getSession();
+    if (session) { S.user = session.user; enter(); }
+    sb.auth.onAuthStateChange((_, s) => { if (s) S.user = s.user; });
 }
 
-// ==================== EVENT BINDING ====================
+// ===== EVENTS =====
 function bind() {
-    q('#loginForm').addEventListener('submit', login);
-    q('#pwToggle').addEventListener('click', togglePw);
+    q('#loginForm').onsubmit = doLogin;
+    q('#lgEye').onclick = () => {
+        const i = q('#lgPass');
+        i.type = i.type === 'password' ? 'text' : 'password';
+    };
 
-    q('#hamburger').addEventListener('click', openSB);
-    q('#sbClose').addEventListener('click', closeSB);
-    q('#mobShade').addEventListener('click', closeSB);
-    q('#logoutBtn').addEventListener('click', doLogout);
-    q('#addFolder').addEventListener('click', () => folderModal());
-    q('#searchBox').addEventListener('input', e => {
-        S.search = e.target.value;
-        renderList();
-    });
+    q('#ham').onclick = () => { q('#sidebar').classList.add('open'); q('#shade').classList.add('on'); };
+    q('#sbX').onclick = closeSB;
+    q('#shade').onclick = closeSB;
+    q('#logoutBtn').onclick = doLogout;
+    q('#addFolder').onclick = () => folderModal();
+    q('#searchBox').oninput = e => { S.search = e.target.value; renderList(); };
 
-    qa('.sb-item').forEach(b => {
-        b.addEventListener('click', () => setFilter(b.dataset.f));
-    });
+    qa('.sb-link').forEach(b => b.onclick = () => setFilter(b.dataset.f));
+    qa('.sort').forEach(b => b.onclick = () => setSort(b.dataset.s));
 
-    qa('.sort-btn').forEach(b => {
-        b.addEventListener('click', () => setSort(b.dataset.s));
-    });
+    q('#newNote').onclick = newNote;
+    q('#blankNew').onclick = newNote;
+    q('#bEdit').onclick = toggleEdit;
+    q('#bPin').onclick = doPin;
+    q('#bArch').onclick = doArchive;
+    q('#bDel').onclick = doDelete;
+    q('#edBack').onclick = goBack;
+    q('#edFolder').onchange = moveNote;
 
-    q('#addNote').addEventListener('click', newNote);
-    q('#blankCreate').addEventListener('click', newNote);
+    q('#edContent').addEventListener('input', onChange);
+    q('#edTitle').addEventListener('input', onChange);
+    q('#edContent').addEventListener('click', linkClick);
+    q('#edContent').addEventListener('mouseup', saveSel);
+    q('#edContent').addEventListener('keyup', saveSel);
 
-    q('#btnEdit').addEventListener('click', toggleEdit);
-    q('#btnPin').addEventListener('click', doPin);
-    q('#btnArchive').addEventListener('click', doArchive);
-    q('#btnDelete').addEventListener('click', doDelete);
-    q('#edBack').addEventListener('click', goBack);
-    q('#edFolder').addEventListener('change', moveNote);
-
-    q('#edContent').addEventListener('input', onContentChange);
-    q('#edTitle').addEventListener('input', onContentChange);
-    q('#edContent').addEventListener('click', handleLinkClick);
-
-    // Save selection whenever it changes in the editor
-    q('#edContent').addEventListener('mouseup', saveSelection);
-    q('#edContent').addEventListener('keyup', saveSelection);
-
-    // Toolbar format commands — prevent stealing focus
-    qa('.tb-btn[data-c]').forEach(b => {
+    // Toolbar — prevent focus loss
+    qa('.tb-b[data-c]').forEach(b => {
         b.addEventListener('mousedown', e => e.preventDefault());
         b.addEventListener('click', () => execCmd(b.dataset.c));
     });
 
-    // Link buttons — prevent stealing focus
-    q('#btnLink').addEventListener('mousedown', e => e.preventDefault());
-    q('#btnLink').addEventListener('click', insertLink);
-
-    q('#btnUnlink').addEventListener('mousedown', e => e.preventDefault());
-    q('#btnUnlink').addEventListener('click', removeLink);
-
-    // Heading select
-    q('#tbHeading').addEventListener('mousedown', saveSelection);
-    q('#tbHeading').addEventListener('change', function () {
-        if (this.value) {
-            restoreSelection();
-            document.execCommand('formatBlock', false, this.value);
-            q('#edContent').focus();
-            scheduleSave();
-        }
-        this.value = '';
+    q('#tbHead').addEventListener('mousedown', saveSel);
+    q('#tbHead').addEventListener('change', function() {
+        if (!this.value) return;
+        restoreSel(); document.execCommand('formatBlock', false, this.value);
+        q('#edContent').focus(); saveSel(); scheduleSave(); this.value = '';
     });
 
-    // Font size select
-    q('#tbSize').addEventListener('mousedown', saveSelection);
-    q('#tbSize').addEventListener('change', function () {
-        if (this.value) {
-            restoreSelection();
-            document.execCommand('fontSize', false, this.value);
-            q('#edContent').focus();
-            scheduleSave();
-        }
-        this.value = '';
+    q('#tbSize').addEventListener('mousedown', saveSel);
+    q('#tbSize').addEventListener('change', function() {
+        if (!this.value) return;
+        restoreSel(); document.execCommand('fontSize', false, this.value);
+        q('#edContent').focus(); saveSel(); scheduleSave(); this.value = '';
     });
 
-    // Color triggers — prevent stealing focus
-    q('#tcTrig').addEventListener('mousedown', e => e.preventDefault());
-    q('#tcTrig').addEventListener('click', e => {
-        e.stopPropagation();
-        q('#hlPopup').classList.remove('on');
-        q('#tcPopup').classList.toggle('on');
-    });
+    // Color buttons
+    q('#tbTextColor').addEventListener('mousedown', e => e.preventDefault());
+    q('#tbTextColor').addEventListener('click', () => openCP('text'));
+    q('#tbHighlight').addEventListener('mousedown', e => e.preventDefault());
+    q('#tbHighlight').addEventListener('click', () => openCP('hl'));
 
-    q('#hlTrig').addEventListener('mousedown', e => e.preventDefault());
-    q('#hlTrig').addEventListener('click', e => {
-        e.stopPropagation();
-        q('#tcPopup').classList.remove('on');
-        q('#hlPopup').classList.toggle('on');
-    });
+    q('#cpClose').onclick = closeCP;
+    q('#cpShade').onclick = closeCP;
+    q('#cpWheel').oninput = function() { q('#cpHex').value = this.value.toUpperCase(); };
+    q('#cpApply').onclick = () => {
+        const v = q('#cpHex').value;
+        if (/^#[0-9A-Fa-f]{6}$/.test(v)) applyColor(v);
+    };
 
-    q('#tcWheel').addEventListener('input', function () {
-        q('#tcHex').value = this.value.toUpperCase();
-    });
-    q('#hlWheel').addEventListener('input', function () {
-        q('#hlHex').value = this.value.toUpperCase();
-    });
+    // Link
+    q('#tbLink').addEventListener('mousedown', e => e.preventDefault());
+    q('#tbLink').addEventListener('click', insertLink);
+    q('#tbUnlink').addEventListener('mousedown', e => e.preventDefault());
+    q('#tbUnlink').addEventListener('click', removeLink);
 
-    q('#tcApply').addEventListener('mousedown', e => e.preventDefault());
-    q('#tcApply').addEventListener('click', () => {
-        const v = q('#tcHex').value;
-        if (okHex(v)) setTC(v);
-    });
-    q('#hlApply').addEventListener('mousedown', e => e.preventDefault());
-    q('#hlApply').addEventListener('click', () => {
-        const v = q('#hlHex').value;
-        if (okHex(v)) setHL(v);
-    });
-
-    document.addEventListener('click', e => {
-        if (!e.target.closest('.cp-wrap')) {
-            qa('.cp-popup').forEach(p => p.classList.remove('on'));
-        }
-    });
-
-    q('#modalShade').addEventListener('click', e => {
-        if (e.target === e.currentTarget) closeModal();
-    });
-
-    document.addEventListener('keydown', handleKeys);
-
+    q('#modalBg').onclick = e => { if (e.target === e.currentTarget) closeModal(); };
+    document.addEventListener('keydown', keys);
     window.addEventListener('resize', () => {
         S.mobile = window.innerWidth <= 768;
-        if (!S.mobile) {
-            q('#listPanel').classList.remove('gone');
-            q('#editor').classList.remove('gone');
-            closeSB();
-        }
+        if (!S.mobile) { q('#list').classList.remove('gone'); q('#editor').classList.remove('gone'); closeSB(); }
     });
 }
 
-// ==================== LOGIN ====================
-async function login(e) {
-    e.preventDefault();
-    const email = q('#loginEmail').value.trim();
-    const pw = q('#loginPassword').value;
+// ===== SELECTION =====
+function saveSel() {
+    const s = window.getSelection();
+    if (s.rangeCount) S.range = s.getRangeAt(0).cloneRange();
+}
 
-    if (!email || !pw) {
-        showLoginErr('Enter email and password');
+function restoreSel() {
+    if (!S.range) return;
+    const s = window.getSelection();
+    s.removeAllRanges();
+    s.addRange(S.range);
+}
+
+// ===== LOGIN =====
+async function doLogin(e) {
+    e.preventDefault();
+    const email = q('#lgEmail').value.trim(), pw = q('#lgPass').value;
+    if (!email || !pw) return loginErr('Enter email and password');
+
+    q('#lgBtn').classList.add('busy'); q('#lgBtn').disabled = true;
+    const { data, error } = await sb.auth.signInWithPassword({ email, password: pw });
+
+    if (error) {
+        loginErr(error.message);
+        q('#lgBtn').classList.remove('busy'); q('#lgBtn').disabled = false;
         return;
     }
-
-    const btn = q('#loginBtn');
-    btn.classList.add('busy');
-    btn.disabled = true;
-
-    try {
-        const { data, error } = await sb.auth.signInWithPassword({
-            email: email,
-            password: pw
-        });
-
-        if (error) {
-            showLoginErr(error.message || 'Invalid credentials');
-            btn.classList.remove('busy');
-            btn.disabled = false;
-            return;
-        }
-
-        S.user = data.user;
-        enter();
-    } catch (err) {
-        showLoginErr('Connection error. Try again.');
-        btn.classList.remove('busy');
-        btn.disabled = false;
-    }
+    S.user = data.user; enter();
 }
 
-function showLoginErr(m) {
-    q('#loginErrMsg').textContent = m;
-    const el = q('#loginErr');
-    el.classList.remove('show');
-    void el.offsetWidth;
-    el.classList.add('show');
-    setTimeout(() => el.classList.remove('show'), 5000);
-}
-
-function togglePw() {
-    const inp = q('#loginPassword');
-    const svg = q('#eyeSvg');
-    if (inp.type === 'password') {
-        inp.type = 'text';
-        svg.innerHTML = '<path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/>';
-    } else {
-        inp.type = 'password';
-        svg.innerHTML = '<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>';
-    }
+function loginErr(m) {
+    q('#lgErrTxt').textContent = m;
+    const e = q('#lgErr'); e.classList.remove('on'); void e.offsetWidth; e.classList.add('on');
+    setTimeout(() => e.classList.remove('on'), 4000);
 }
 
 function doLogout() {
-    confirm2('Sign Out', 'Are you sure you want to sign out?', 'warn', async () => {
+    confirm2('Sign Out', 'Sign out of NoteVault?', 'warn', async () => {
         await sb.auth.signOut();
-        S.user = null;
-        S.cur = null;
-        S.notes = [];
-        S.folders = [];
+        S.user = null; S.cur = null; S.notes = []; S.folders = [];
         q('#app').classList.remove('on');
-        q('#loginOverlay').classList.remove('gone');
-        q('#loginEmail').value = '';
-        q('#loginPassword').value = '';
-        q('#loginBtn').classList.remove('busy');
-        q('#loginBtn').disabled = false;
+        q('#loginScreen').classList.remove('out');
+        q('#lgEmail').value = ''; q('#lgPass').value = '';
+        q('#lgBtn').classList.remove('busy'); q('#lgBtn').disabled = false;
     });
 }
 
-// ==================== ENTER APP ====================
+// ===== ENTER =====
 async function enter() {
-    q('#loginOverlay').classList.add('gone');
+    q('#loginScreen').classList.add('out');
     q('#app').classList.add('on');
-
-    const name = S.user.user_metadata?.username || S.user.email?.split('@')[0] || 'User';
-    q('#uAvatar').textContent = name.substring(0, 2).toUpperCase();
-    q('#uName').textContent = name;
-
-    await loadFolders();
-    await loadNotes();
-    renderList();
-    counts();
-
-    if (S.mobile) {
-        q('#editor').classList.add('gone');
-        q('#listPanel').classList.remove('gone');
-    }
+    const n = S.user.user_metadata?.username || S.user.email?.split('@')[0] || 'User';
+    q('#uAv').textContent = n.substring(0, 2).toUpperCase();
+    q('#uName').textContent = n;
+    await loadFolders(); await loadNotes();
+    renderList(); counts();
+    if (S.mobile) { q('#editor').classList.add('gone'); q('#list').classList.remove('gone'); }
 }
 
-// ==================== DATA LOADING ====================
+// ===== DATA =====
 async function loadFolders() {
-    try {
-        const { data } = await sb.from('folders').select('*').eq('user_id', S.user.id).order('sort_order');
-        S.folders = data || [];
-        renderFolders();
-    } catch (e) {
-        console.error('Load folders:', e);
-    }
+    const { data } = await sb.from('folders').select('*').eq('user_id', S.user.id).order('sort_order');
+    S.folders = data || []; renderFolders();
 }
 
 async function loadNotes() {
-    try {
-        const { data } = await sb.from('notes').select('*').eq('user_id', S.user.id).order('updated_at', { ascending: false });
-        S.notes = data || [];
-    } catch (e) {
-        console.error('Load notes:', e);
-    }
+    const { data } = await sb.from('notes').select('*').eq('user_id', S.user.id).order('updated_at', { ascending: false });
+    S.notes = data || [];
 }
 
-// ==================== FOLDERS ====================
+// ===== FOLDERS =====
 function renderFolders() {
-    const c = q('#foldersBox');
-    c.innerHTML = '';
+    const c = q('#fList'); c.innerHTML = '';
     S.folders.forEach(f => {
         const cnt = S.notes.filter(n => n.folder_id === f.id && !n.is_archived).length;
-        const act = S.filter === 'folder' && S.folder === f.id;
         const d = document.createElement('div');
-        d.className = 'fd-item' + (act ? ' active' : '');
+        d.className = 'fl-item' + (S.filter === 'folder' && S.folder === f.id ? ' active' : '');
         d.innerHTML = `
-            <span class="fd-dot" style="background:${f.color}"></span>
-            <span class="fd-name">${esc(f.name)}</span>
-            <span class="fd-cnt">${cnt}</span>
-            <div class="fd-acts">
-                <button class="fd-act ed-f"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>
-                <button class="fd-act del dl-f"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button>
+            <span class="fl-dot" style="background:${f.color}"></span>
+            <span class="fl-name">${esc(f.name)}</span>
+            <span class="fl-cnt">${cnt}</span>
+            <div class="fl-acts">
+                <button class="fl-ab fe"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>
+                <button class="fl-ab dl fd"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button>
             </div>`;
-        d.addEventListener('click', e => {
-            if (e.target.closest('.fd-act')) return;
-            setFolderFilter(f.id, f.name);
-        });
-        d.querySelector('.ed-f').addEventListener('click', e => {
-            e.stopPropagation();
-            folderModal(f);
-        });
-        d.querySelector('.dl-f').addEventListener('click', e => {
-            e.stopPropagation();
-            delFolder(f);
-        });
+        d.onclick = e => { if (e.target.closest('.fl-ab')) return; setFolderFilter(f.id, f.name); };
+        d.querySelector('.fe').onclick = e => { e.stopPropagation(); folderModal(f); };
+        d.querySelector('.fd').onclick = e => { e.stopPropagation(); delFolder(f); };
         c.appendChild(d);
     });
     updateFolderSel();
@@ -410,911 +228,436 @@ function renderFolders() {
 function updateFolderSel() {
     const s = q('#edFolder');
     s.innerHTML = '<option value="">No folder</option>';
-    S.folders.forEach(f => {
-        const o = document.createElement('option');
-        o.value = f.id;
-        o.textContent = f.name;
-        s.appendChild(o);
-    });
+    S.folders.forEach(f => { const o = document.createElement('option'); o.value = f.id; o.textContent = f.name; s.appendChild(o); });
     if (S.cur) s.value = S.cur.folder_id || '';
 }
 
 function folderModal(ex = null) {
     const isE = !!ex;
-    const cName = isE ? ex.name : '';
-    const cCol = isE ? ex.color : FC[0];
-    const cIcn = isE ? (ex.icon || '📁') : '📁';
-
     modal(isE ? 'Edit Folder' : 'New Folder', `
-        <div class="field">
-            <label>Name</label>
-            <input type="text" class="input" id="fmName" value="${esc(cName)}" placeholder="Folder name">
-        </div>
-        <div class="field">
-            <label>Color</label>
-            <div class="fc-grid">${FC.map(c =>
-                `<button type="button" class="fc-opt${c === cCol ? ' sel' : ''}" style="background:${c}" data-c="${c}"></button>`
-            ).join('')}</div>
-        </div>
-        <div class="field">
-            <label>Icon</label>
-            <div class="icn-grid">${FI.map(i =>
-                `<button type="button" class="icn-opt${i === cIcn ? ' sel' : ''}" data-i="${i}">${i}</button>`
-            ).join('')}</div>
-        </div>
-        <input type="hidden" id="fmCol" value="${cCol}">
-        <input type="hidden" id="fmIcn" value="${cIcn}">
+        <div class="lg-field"><label>Name</label><input type="text" id="fmN" value="${isE ? esc(ex.name) : ''}" placeholder="Folder name"></div>
+        <div class="lg-field"><label>Color</label><div class="fc-grid">${FC.map(c =>
+            `<button type="button" class="fc-opt${c === (isE ? ex.color : FC[0]) ? ' sel' : ''}" style="background:${c}" data-c="${c}"></button>`
+        ).join('')}</div></div>
+        <input type="hidden" id="fmC" value="${isE ? ex.color : FC[0]}">
     `, [
         { t: 'Cancel', c: '', fn: closeModal },
         { t: isE ? 'Save' : 'Create', c: 'pri', fn: () => saveFolder(ex) }
     ]);
-
-    qa('.fc-opt').forEach(b => {
-        b.addEventListener('click', function () {
-            qa('.fc-opt').forEach(x => x.classList.remove('sel'));
-            this.classList.add('sel');
-            q('#fmCol').value = this.dataset.c;
-        });
+    qa('.fc-opt').forEach(b => b.onclick = function() {
+        qa('.fc-opt').forEach(x => x.classList.remove('sel'));
+        this.classList.add('sel'); q('#fmC').value = this.dataset.c;
     });
-
-    qa('.icn-opt').forEach(b => {
-        b.addEventListener('click', function () {
-            qa('.icn-opt').forEach(x => x.classList.remove('sel'));
-            this.classList.add('sel');
-            q('#fmIcn').value = this.dataset.i;
-        });
-    });
-
-    setTimeout(() => q('#fmName')?.focus(), 100);
+    setTimeout(() => q('#fmN')?.focus(), 80);
 }
 
 async function saveFolder(ex) {
-    const name = (q('#fmName')?.value || '').trim();
-    const color = q('#fmCol')?.value || FC[0];
-    const icon = q('#fmIcn')?.value || '📁';
-
-    if (!name) {
-        toast('Enter a folder name', 'warning');
-        return;
-    }
-
-    try {
-        if (ex) {
-            const { error } = await sb.from('folders').update({ name, color, icon }).eq('id', ex.id);
-            if (error) throw error;
-            toast('Folder updated', 'success');
-        } else {
-            const { error } = await sb.from('folders').insert({
-                user_id: S.user.id, name, color, icon,
-                sort_order: S.folders.length
-            });
-            if (error) throw error;
-            toast('Folder created', 'success');
-        }
-        closeModal();
-        await loadFolders();
-        await loadNotes();
-        renderList();
-        counts();
-    } catch (e) {
-        toast('Failed to save folder', 'error');
-    }
+    const name = (q('#fmN')?.value || '').trim(), color = q('#fmC')?.value || FC[0];
+    if (!name) return toast('Enter a name', 'warning');
+    if (ex) await sb.from('folders').update({ name, color }).eq('id', ex.id);
+    else await sb.from('folders').insert({ user_id: S.user.id, name, color, sort_order: S.folders.length });
+    closeModal(); await loadFolders(); await loadNotes(); renderList(); counts();
+    toast(ex ? 'Folder updated' : 'Folder created', 'success');
 }
 
 function delFolder(f) {
-    confirm2('Delete Folder',
-        `Delete <strong>"${esc(f.name)}"</strong>? Notes inside become uncategorized.`,
-        'err',
-        async () => {
-            try {
-                await sb.from('notes').update({ folder_id: null }).eq('folder_id', f.id);
-                await sb.from('folders').delete().eq('id', f.id);
-                if (S.folder === f.id) {
-                    S.folder = null;
-                    S.filter = 'all';
-                    updateNav();
-                    q('#listTitle').textContent = 'All Notes';
-                }
-                await loadFolders();
-                await loadNotes();
-                renderList();
-                counts();
-                toast('Folder deleted', 'success');
-            } catch (e) {
-                toast('Failed to delete folder', 'error');
-            }
-        }
-    );
+    confirm2('Delete Folder', `Delete <strong>"${esc(f.name)}"</strong>?`, 'err', async () => {
+        await sb.from('notes').update({ folder_id: null }).eq('folder_id', f.id);
+        await sb.from('folders').delete().eq('id', f.id);
+        if (S.folder === f.id) { S.folder = null; S.filter = 'all'; updateNav(); q('#listTitle').textContent = 'All Notes'; }
+        await loadFolders(); await loadNotes(); renderList(); counts();
+        toast('Folder deleted', 'success');
+    });
 }
 
-// ==================== NOTES CRUD ====================
+// ===== NOTES =====
 async function newNote() {
-    const fid = S.folder || (S.folders[0]?.id || null);
-
-    try {
-        const { data, error } = await sb.from('notes')
-            .insert({
-                user_id: S.user.id,
-                title: 'Untitled Note',
-                content: '',
-                folder_id: fid
-            })
-            .select()
-            .single();
-
-        if (error) throw error;
-
-        S.notes.unshift(data);
-        renderList();
-        counts();
-        pick(data.id);
-        S.editing = true;
-        applyEdit();
-        q('#edTitle').focus();
-        q('#edTitle').select();
-        toast('Note created', 'success');
-        if (S.mobile) showEd();
-    } catch (e) {
-        toast('Failed to create note', 'error');
-    }
+    const fid = S.folder || S.folders[0]?.id || null;
+    const { data, error } = await sb.from('notes').insert({ user_id: S.user.id, title: 'Untitled Note', content: '', folder_id: fid }).select().single();
+    if (error) return toast('Failed', 'error');
+    S.notes.unshift(data); renderList(); counts();
+    pick(data.id); S.editing = true; applyEdit();
+    q('#edTitle').focus(); q('#edTitle').select();
+    toast('Note created', 'success');
+    if (S.mobile) showEd();
 }
 
 function pick(id) {
     const n = S.notes.find(x => x.id === id);
     if (!n) return;
-
-    if (S.cur && S.editing && S.cur.id !== id) {
-        instantSave();
-    }
-
-    S.cur = n;
-    S.editing = false;
-
+    if (S.cur && S.editing && S.cur.id !== id) instantSave();
+    S.cur = n; S.editing = false;
     q('#edBlank').style.display = 'none';
-    q('#edLive').classList.add('on');
-
+    q('#edActive').classList.add('on');
     q('#edTitle').value = n.title || '';
     q('#edContent').innerHTML = n.content || '';
     q('#edFolder').value = n.folder_id || '';
-
-    showSavedTime(n.updated_at);
-    applyEdit();
-    pinUI();
-    archUI();
-    updateWordCount();
-
-    qa('.n-card').forEach(c => c.classList.toggle('active', c.dataset.id === id));
+    savedTxt(n.updated_at); applyEdit(); pinUI(); archUI(); wc();
+    qa('.nc').forEach(c => c.classList.toggle('active', c.dataset.id === id));
     if (S.mobile) showEd();
 }
 
 async function instantSave() {
     if (!S.cur || S.saving) return;
-
-    const title = (q('#edTitle').value || '').trim() || 'Untitled Note';
-    const content = q('#edContent').innerHTML;
-
-    if (title === S.cur.title && content === S.cur.content) return;
-
+    const t = (q('#edTitle').value || '').trim() || 'Untitled Note';
+    const c = q('#edContent').innerHTML;
+    if (t === S.cur.title && c === S.cur.content) return;
     S.saving = true;
-
-    try {
-        const now = new Date().toISOString();
-        const { error } = await sb.from('notes')
-            .update({ title, content, updated_at: now })
-            .eq('id', S.cur.id);
-
-        if (error) throw error;
-
-        S.cur.title = title;
-        S.cur.content = content;
-        S.cur.updated_at = now;
-
-        const idx = S.notes.findIndex(x => x.id === S.cur.id);
-        if (idx > -1) S.notes[idx] = { ...S.cur };
-
-        showSavedTime();
-        renderList();
-    } catch (e) {
-        console.error('Save error:', e);
-    } finally {
-        S.saving = false;
-    }
+    const now = new Date().toISOString();
+    await sb.from('notes').update({ title: t, content: c, updated_at: now }).eq('id', S.cur.id);
+    S.cur.title = t; S.cur.content = c; S.cur.updated_at = now;
+    const i = S.notes.findIndex(x => x.id === S.cur.id);
+    if (i > -1) S.notes[i] = { ...S.cur };
+    savedTxt(); renderList(); S.saving = false;
 }
 
 function scheduleSave() {
     clearTimeout(S.saveT);
-    q('#edStatusTxt').textContent = 'Saving...';
-    S.saveT = setTimeout(() => {
-        if (S.cur && S.editing) instantSave();
-    }, 1200);
+    q('#edSaved').textContent = 'Saving...';
+    S.saveT = setTimeout(() => { if (S.cur && S.editing) instantSave(); }, 1000);
 }
 
 async function moveNote() {
     if (!S.cur) return;
     const fid = q('#edFolder').value || null;
-
-    try {
-        await sb.from('notes').update({ folder_id: fid }).eq('id', S.cur.id);
-        S.cur.folder_id = fid;
-        const idx = S.notes.findIndex(x => x.id === S.cur.id);
-        if (idx > -1) S.notes[idx].folder_id = fid;
-        renderList();
-        renderFolders();
-        counts();
-        toast('Note moved', 'success');
-    } catch (e) {
-        toast('Failed to move note', 'error');
-    }
+    await sb.from('notes').update({ folder_id: fid }).eq('id', S.cur.id);
+    S.cur.folder_id = fid;
+    const i = S.notes.findIndex(x => x.id === S.cur.id); if (i > -1) S.notes[i].folder_id = fid;
+    renderList(); renderFolders(); counts(); toast('Moved', 'success');
 }
 
 async function doPin() {
     if (!S.cur) return;
     const v = !S.cur.is_pinned;
-
-    try {
-        const { error } = await sb.from('notes').update({ is_pinned: v }).eq('id', S.cur.id);
-        if (error) throw error;
-
-        S.cur.is_pinned = v;
-        const idx = S.notes.findIndex(x => x.id === S.cur.id);
-        if (idx > -1) S.notes[idx].is_pinned = v;
-
-        pinUI();
-        renderList();
-        counts();
-        toast(v ? 'Pinned' : 'Unpinned', 'success');
-    } catch (e) {
-        toast('Failed to update', 'error');
-    }
+    await sb.from('notes').update({ is_pinned: v }).eq('id', S.cur.id);
+    S.cur.is_pinned = v;
+    const i = S.notes.findIndex(x => x.id === S.cur.id); if (i > -1) S.notes[i].is_pinned = v;
+    pinUI(); renderList(); counts(); toast(v ? 'Pinned' : 'Unpinned', 'success');
 }
-
-function pinUI() {
-    const btn = q('#btnPin');
-    btn.classList.toggle('on', !!S.cur?.is_pinned);
-    btn.title = S.cur?.is_pinned ? 'Unpin' : 'Pin';
-}
+function pinUI() { q('#bPin').classList.toggle('on', !!S.cur?.is_pinned); }
 
 function doArchive() {
     if (!S.cur) return;
     const v = !S.cur.is_archived;
-
-    confirm2(
-        v ? 'Archive Note' : 'Restore Note',
-        v ? 'Move this note to archive?' : 'Restore this note from archive?',
-        'warn',
-        async () => {
-            try {
-                const { error } = await sb.from('notes').update({ is_archived: v }).eq('id', S.cur.id);
-                if (error) throw error;
-
-                S.cur.is_archived = v;
-                const idx = S.notes.findIndex(x => x.id === S.cur.id);
-                if (idx > -1) S.notes[idx].is_archived = v;
-
-                archUI();
-                renderList();
-                counts();
-                toast(v ? 'Archived' : 'Restored', 'success');
-            } catch (e) {
-                toast('Failed to update', 'error');
-            }
-        }
-    );
+    confirm2(v ? 'Archive' : 'Restore', v ? 'Archive this note?' : 'Restore this note?', 'warn', async () => {
+        await sb.from('notes').update({ is_archived: v }).eq('id', S.cur.id);
+        S.cur.is_archived = v;
+        const i = S.notes.findIndex(x => x.id === S.cur.id); if (i > -1) S.notes[i].is_archived = v;
+        archUI(); renderList(); counts(); toast(v ? 'Archived' : 'Restored', 'success');
+    });
 }
-
-function archUI() {
-    const btn = q('#btnArchive');
-    btn.classList.toggle('on', !!S.cur?.is_archived);
-    btn.title = S.cur?.is_archived ? 'Restore' : 'Archive';
-}
+function archUI() { q('#bArch').classList.toggle('on', !!S.cur?.is_archived); }
 
 function doDelete() {
     if (!S.cur) return;
-
-    confirm2(
-        'Delete Note',
-        `Permanently delete <strong>"${esc(S.cur.title)}"</strong>? This cannot be undone.`,
-        'err',
-        async () => {
-            try {
-                await sb.from('notes').delete().eq('id', S.cur.id);
-                S.notes = S.notes.filter(x => x.id !== S.cur.id);
-                S.cur = null;
-
-                q('#edBlank').style.display = '';
-                q('#edLive').classList.remove('on');
-
-                renderList();
-                renderFolders();
-                counts();
-                toast('Note deleted', 'success');
-                if (S.mobile) showList();
-            } catch (e) {
-                toast('Failed to delete note', 'error');
-            }
-        }
-    );
+    confirm2('Delete', `Delete <strong>"${esc(S.cur.title)}"</strong> permanently?`, 'err', async () => {
+        await sb.from('notes').delete().eq('id', S.cur.id);
+        S.notes = S.notes.filter(x => x.id !== S.cur.id); S.cur = null;
+        q('#edBlank').style.display = ''; q('#edActive').classList.remove('on');
+        renderList(); renderFolders(); counts(); toast('Deleted', 'success');
+        if (S.mobile) showList();
+    });
 }
 
-// ==================== EDIT MODE ====================
+// ===== EDIT MODE =====
 function toggleEdit() {
-    if (S.editing) {
-        S.editing = false;
-        clearTimeout(S.saveT);
-        applyEdit();
-        instantSave();
-    } else {
-        S.editing = true;
-        applyEdit();
-        q('#edContent').focus();
-    }
+    if (S.editing) { S.editing = false; clearTimeout(S.saveT); applyEdit(); instantSave(); }
+    else { S.editing = true; applyEdit(); q('#edContent').focus(); }
 }
 
 function applyEdit() {
-    const c = q('#edContent');
-    const t = q('#edTitle');
-    const tb = q('#toolbar');
-    const btn = q('#btnEdit');
-
+    const c = q('#edContent'), t = q('#edTitle'), tb = q('#tbWrap'), b = q('#bEdit');
     if (S.editing) {
-        c.contentEditable = 'true';
-        t.readOnly = false;
-        tb.classList.add('on');
-        btn.classList.add('editing');
-        btn.querySelector('span').textContent = 'Done';
+        c.contentEditable = 'true'; t.readOnly = false; tb.classList.add('on');
+        b.classList.add('editing'); b.querySelector('span').textContent = 'Done';
     } else {
-        c.contentEditable = 'false';
-        t.readOnly = true;
-        tb.classList.remove('on');
-        btn.classList.remove('editing');
-        btn.querySelector('span').textContent = 'Edit';
+        c.contentEditable = 'false'; t.readOnly = true; tb.classList.remove('on');
+        b.classList.remove('editing'); b.querySelector('span').textContent = 'Edit';
     }
 }
 
-// ==================== RENDER LIST ====================
+// ===== LIST =====
 function renderList() {
     const c = q('#notesList');
     let ns = filtered();
-
     if (!ns.length) {
-        c.innerHTML = `
-            <div class="n-empty">
-                <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3">
-                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-                    <polyline points="14 2 14 8 20 8"/>
-                </svg>
-                <h3>No notes</h3>
-                <p>${S.search ? 'Try different search' : 'Create a note to begin'}</p>
-            </div>`;
+        c.innerHTML = `<div class="list-empty"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg><h3>No notes</h3><p>${S.search ? 'Try different search' : 'Create one to start'}</p></div>`;
         return;
     }
-
     ns = sorted(ns);
-
-    if (S.filter !== 'pinned') {
-        const p = ns.filter(x => x.is_pinned);
-        const u = ns.filter(x => !x.is_pinned);
-        ns = [...p, ...u];
-    }
+    if (S.filter !== 'pinned') { const p = ns.filter(x => x.is_pinned), u = ns.filter(x => !x.is_pinned); ns = [...p, ...u]; }
 
     c.innerHTML = ns.map(n => {
         const f = S.folders.find(x => x.id === n.folder_id);
-        const prev = strip(n.content || '').substring(0, 130) || 'No content';
-        const isActive = S.cur?.id === n.id;
-
-        return `
-            <div class="n-card${isActive ? ' active' : ''}" data-id="${n.id}">
-                ${n.is_pinned ? '<span class="n-pin"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 17l-5 3 1.5-5.6L4 10.5l5.8-.5L12 5l2.2 5 5.8.5-4.5 3.9L17 20z"/></svg></span>' : ''}
-                <div class="n-ttl">${esc(n.title || 'Untitled Note')}</div>
-                <div class="n-pre">${esc(prev)}</div>
-                <div class="n-foot">
-                    <span class="n-date">
-                        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <circle cx="12" cy="12" r="10"/>
-                            <polyline points="12 6 12 12 16 14"/>
-                        </svg>
-                        ${fmtDate(n.updated_at)}
-                    </span>
-                    ${f ? `<span class="n-tag"><i style="background:${f.color}"></i>${esc(f.name)}</span>` : ''}
-                </div>
-            </div>`;
+        const pre = strip(n.content || '').substring(0, 120) || 'No content';
+        return `<div class="nc${S.cur?.id === n.id ? ' active' : ''}" data-id="${n.id}">
+            ${n.is_pinned ? '<span class="nc-pin"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 17l-5 3 1.5-5.6L4 10.5l5.8-.5L12 5l2.2 5 5.8.5-4.5 3.9L17 20z"/></svg></span>' : ''}
+            <div class="nc-t">${esc(n.title || 'Untitled')}</div>
+            <div class="nc-p">${esc(pre)}</div>
+            <div class="nc-m"><span>${fmtD(n.updated_at)}</span>${f ? `<span class="nc-tag"><i style="background:${f.color}"></i>${esc(f.name)}</span>` : ''}</div>
+        </div>`;
     }).join('');
 
-    c.querySelectorAll('.n-card').forEach(el => {
-        el.addEventListener('click', () => pick(el.dataset.id));
-    });
+    c.querySelectorAll('.nc').forEach(el => el.onclick = () => pick(el.dataset.id));
 }
 
 function filtered() {
     let ns = [...S.notes];
-
-    if (S.search) {
-        const s = S.search.toLowerCase();
-        ns = ns.filter(n =>
-            (n.title || '').toLowerCase().includes(s) ||
-            strip(n.content || '').toLowerCase().includes(s)
-        );
-    }
-
+    if (S.search) { const s = S.search.toLowerCase(); ns = ns.filter(n => (n.title || '').toLowerCase().includes(s) || strip(n.content || '').toLowerCase().includes(s)); }
     switch (S.filter) {
-        case 'pinned':
-            return ns.filter(n => n.is_pinned && !n.is_archived);
-        case 'archived':
-            return ns.filter(n => n.is_archived);
-        case 'folder':
-            return ns.filter(n => n.folder_id === S.folder && !n.is_archived);
-        default:
-            return ns.filter(n => !n.is_archived);
+        case 'pinned': return ns.filter(n => n.is_pinned && !n.is_archived);
+        case 'archived': return ns.filter(n => n.is_archived);
+        case 'folder': return ns.filter(n => n.folder_id === S.folder && !n.is_archived);
+        default: return ns.filter(n => !n.is_archived);
     }
 }
 
 function sorted(ns) {
     switch (S.sort) {
-        case 'created':
-            return ns.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
-        case 'title':
-            return ns.sort((a, b) => (a.title || '').localeCompare(b.title || ''));
-        default:
-            return ns.sort((a, b) => new Date(b.updated_at) - new Date(a.updated_at));
+        case 'created': return ns.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+        case 'title': return ns.sort((a, b) => (a.title || '').localeCompare(b.title || ''));
+        default: return ns.sort((a, b) => new Date(b.updated_at) - new Date(a.updated_at));
     }
 }
 
-// ==================== FILTERS & SORT ====================
+// ===== FILTERS =====
 function setFilter(f) {
-    S.filter = f;
-    S.folder = null;
-    updateNav();
-    const titles = { all: 'All Notes', pinned: 'Pinned', archived: 'Archived' };
-    q('#listTitle').textContent = titles[f] || 'All Notes';
-    renderFolders();
-    renderList();
-    closeSB();
+    S.filter = f; S.folder = null; updateNav();
+    q('#listTitle').textContent = { all: 'All Notes', pinned: 'Pinned', archived: 'Archived' }[f];
+    renderFolders(); renderList(); closeSB();
 }
 
 function setFolderFilter(id, name) {
-    S.filter = 'folder';
-    S.folder = id;
-    updateNav();
+    S.filter = 'folder'; S.folder = id; updateNav();
     q('#listTitle').textContent = name;
-    renderFolders();
-    renderList();
-    closeSB();
+    renderFolders(); renderList(); closeSB();
 }
 
-function updateNav() {
-    qa('.sb-item').forEach(b => {
-        b.classList.toggle('active', b.dataset.f === S.filter && S.filter !== 'folder');
-    });
-}
+function updateNav() { qa('.sb-link').forEach(b => b.classList.toggle('active', b.dataset.f === S.filter && S.filter !== 'folder')); }
 
 function setSort(s) {
-    S.sort = s;
-    qa('.sort-btn').forEach(b => b.classList.toggle('active', b.dataset.s === s));
+    S.sort = s; qa('.sort').forEach(b => b.classList.toggle('active', b.dataset.s === s));
     renderList();
 }
 
 function counts() {
     q('#cAll').textContent = S.notes.filter(n => !n.is_archived).length;
-    q('#cPinned').textContent = S.notes.filter(n => n.is_pinned && !n.is_archived).length;
-    q('#cArchived').textContent = S.notes.filter(n => n.is_archived).length;
+    q('#cPin').textContent = S.notes.filter(n => n.is_pinned && !n.is_archived).length;
+    q('#cArch').textContent = S.notes.filter(n => n.is_archived).length;
     renderFolders();
 }
 
-// ==================== TOOLBAR COMMANDS ====================
+// ===== TOOLBAR =====
 function execCmd(c) {
-    restoreSelection();
-    document.execCommand(c, false, null);
-    q('#edContent').focus();
-    saveSelection();
-    scheduleSave();
+    restoreSel(); document.execCommand(c, false, null);
+    q('#edContent').focus(); saveSel(); scheduleSave();
 }
 
-// ==================== LINK INSERT ====================
-function insertLink() {
-    // Save current selection BEFORE opening modal
-    saveSelection();
+// ===== COLOR PANEL =====
+function openCP(mode) {
+    saveSel();
+    S.cpMode = mode;
+    q('#cpTitle').textContent = mode === 'text' ? 'Text Color' : 'Highlight Color';
+    const colors = mode === 'text' ? TC : HC;
+    const grid = q('#cpGrid');
+    grid.innerHTML = '';
+    colors.forEach(c => {
+        const b = document.createElement('button');
+        b.className = 'cp-sw' + (c === 'transparent' ? ' none' : '');
+        if (c !== 'transparent') b.style.background = c;
+        b.addEventListener('click', () => applyColor(c));
+        grid.appendChild(b);
+    });
 
-    const sel = window.getSelection();
-    const selectedText = sel.toString().trim();
+    if (S.mobile) {
+        q('#cpShade').classList.add('on');
+    }
+    q('#cpanel').classList.add('on');
 
-    // Check if cursor is already inside a link
-    let parentLink = null;
-    if (S.savedRange) {
-        let node = S.savedRange.commonAncestorContainer;
-        while (node && node !== q('#edContent')) {
-            if (node.nodeType === 1 && node.tagName === 'A') {
-                parentLink = node;
-                break;
-            }
-            node = node.parentNode;
+    if (!S.mobile) {
+        // Position near the trigger button
+        const trigger = mode === 'text' ? q('#tbTextColor') : q('#tbHighlight');
+        const r = trigger.getBoundingClientRect();
+        const panel = q('#cpanel');
+        panel.style.position = 'fixed';
+        panel.style.top = (r.bottom + 8) + 'px';
+        panel.style.left = Math.max(8, Math.min(r.left, window.innerWidth - 292)) + 'px';
+        panel.style.bottom = 'auto';
+        panel.style.right = 'auto';
+    }
+}
+
+function closeCP() {
+    q('#cpanel').classList.remove('on');
+    q('#cpShade').classList.remove('on');
+}
+
+function applyColor(c) {
+    closeCP();
+    q('#edContent').focus();
+    restoreSel();
+
+    if (S.cpMode === 'text') {
+        document.execCommand('foreColor', false, c);
+        q('#tcPreview').style.background = c;
+    } else {
+        if (c === 'transparent') document.execCommand('removeFormat', false, null);
+        else {
+            document.execCommand('hiliteColor', false, c);
+            q('#hlPreview').style.background = c;
         }
     }
 
-    const existingUrl = parentLink ? parentLink.getAttribute('href') || '' : '';
-    const existingText = parentLink ? parentLink.textContent : selectedText;
+    saveSel();
+    scheduleSave();
+}
+
+// ===== LINKS =====
+function insertLink() {
+    saveSel();
+    const sel = window.getSelection();
+    const selText = sel.toString().trim();
+    let parentLink = null;
+    if (S.range) {
+        let nd = S.range.commonAncestorContainer;
+        while (nd && nd !== q('#edContent')) { if (nd.nodeType === 1 && nd.tagName === 'A') { parentLink = nd; break; } nd = nd.parentNode; }
+    }
 
     modal('Insert Link', `
-        <div class="field">
-            <label>
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
-                URL
-            </label>
-            <input type="text" class="input" id="linkUrl" placeholder="https://example.com" value="${esc(existingUrl)}">
-        </div>
-        <div class="field">
-            <label>
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7V4h16v3"/><path d="M9 20h6"/><path d="M12 4v16"/></svg>
-                Display Text (leave blank to use selection)
-            </label>
-            <input type="text" class="input" id="linkText" placeholder="Link text" value="${esc(existingText)}">
-        </div>
+        <div class="lg-field"><label>URL</label><input type="text" id="lkUrl" placeholder="https://example.com" value="${parentLink ? esc(parentLink.href) : ''}"></div>
+        <div class="lg-field"><label>Text (optional)</label><input type="text" id="lkTxt" placeholder="Display text" value="${esc(parentLink ? parentLink.textContent : selText)}"></div>
     `, [
         { t: 'Cancel', c: '', fn: closeModal },
-        { t: parentLink ? 'Update' : 'Insert', c: 'pri', fn: () => applyLink(parentLink, selectedText) }
+        { t: parentLink ? 'Update' : 'Insert', c: 'pri', fn: () => applyLinkAction(parentLink, selText) }
     ]);
-
-    setTimeout(() => q('#linkUrl')?.focus(), 100);
+    setTimeout(() => q('#lkUrl')?.focus(), 80);
 }
 
-function applyLink(existingLink, originalSelectedText) {
-    let url = (q('#linkUrl')?.value || '').trim();
-    const customText = (q('#linkText')?.value || '').trim();
-
-    if (!url) {
-        toast('Please enter a URL', 'warning');
-        return;
-    }
-
-    // Auto-add https
-    if (!/^(https?|ftp):\/\//i.test(url)) {
-        url = 'https://' + url;
-    }
-
+function applyLinkAction(existing, origText) {
+    let url = (q('#lkUrl')?.value || '').trim();
+    const txt = (q('#lkTxt')?.value || '').trim();
+    if (!url) return toast('Enter a URL', 'warning');
+    if (!/^(https?|ftp):\/\//i.test(url)) url = 'https://' + url;
     closeModal();
+    q('#edContent').focus();
 
-    const content = q('#edContent');
-    content.focus();
-
-    if (existingLink) {
-        // Update existing link
-        existingLink.href = url;
-        existingLink.target = '_blank';
-        existingLink.rel = 'noopener noreferrer';
-        if (customText) existingLink.textContent = customText;
-        scheduleSave();
-        return;
+    if (existing) {
+        existing.href = url; existing.target = '_blank';
+        if (txt) existing.textContent = txt;
+        scheduleSave(); return;
     }
 
-    // Restore the saved selection
-    if (S.savedRange) {
-        const sel = window.getSelection();
-        sel.removeAllRanges();
-        sel.addRange(S.savedRange);
+    if (S.range) {
+        const s = window.getSelection(); s.removeAllRanges(); s.addRange(S.range);
+        const a = document.createElement('a');
+        a.href = url; a.target = '_blank'; a.rel = 'noopener noreferrer';
 
-        // If there was selected text, wrap it in a link
-        if (originalSelectedText && !S.savedRange.collapsed) {
-            // Create the link element
-            const link = document.createElement('a');
-            link.href = url;
-            link.target = '_blank';
-            link.rel = 'noopener noreferrer';
-
-            if (customText && customText !== originalSelectedText) {
-                // User changed the display text — replace selection with new text in link
-                S.savedRange.deleteContents();
-                link.textContent = customText;
-                S.savedRange.insertNode(link);
-            } else {
-                // Wrap the existing selection with the link
-                try {
-                    S.savedRange.surroundContents(link);
-                } catch (e) {
-                    // surroundContents fails if selection spans multiple elements
-                    // Fall back to extracting and wrapping
-                    const fragment = S.savedRange.extractContents();
-                    link.appendChild(fragment);
-                    S.savedRange.insertNode(link);
-                }
-            }
-
-            // Move cursor after the link
-            const newRange = document.createRange();
-            newRange.setStartAfter(link);
-            newRange.collapse(true);
-            sel.removeAllRanges();
-            sel.addRange(newRange);
+        if (origText && !S.range.collapsed) {
+            if (txt && txt !== origText) { S.range.deleteContents(); a.textContent = txt; S.range.insertNode(a); }
+            else { try { S.range.surroundContents(a); } catch { const f = S.range.extractContents(); a.appendChild(f); S.range.insertNode(a); } }
         } else {
-            // No selection — insert a new link at cursor position
-            const displayText = customText || url;
-            const link = document.createElement('a');
-            link.href = url;
-            link.target = '_blank';
-            link.rel = 'noopener noreferrer';
-            link.textContent = displayText;
-
-            S.savedRange.deleteContents();
-            S.savedRange.insertNode(link);
-
-            // Add a space after and move cursor there
-            const space = document.createTextNode('\u00A0');
-            link.parentNode.insertBefore(space, link.nextSibling);
-
-            const newRange = document.createRange();
-            newRange.setStartAfter(space);
-            newRange.collapse(true);
-            sel.removeAllRanges();
-            sel.addRange(newRange);
+            a.textContent = txt || url;
+            S.range.deleteContents(); S.range.insertNode(a);
+            const sp = document.createTextNode('\u00A0');
+            a.parentNode.insertBefore(sp, a.nextSibling);
         }
-    } else {
-        // No saved range at all — just append
-        const displayText = customText || url;
-        const link = document.createElement('a');
-        link.href = url;
-        link.target = '_blank';
-        link.rel = 'noopener noreferrer';
-        link.textContent = displayText;
-        content.appendChild(link);
-        content.appendChild(document.createTextNode('\u00A0'));
+        const nr = document.createRange(); nr.setStartAfter(a); nr.collapse(true); s.removeAllRanges(); s.addRange(nr);
     }
-
-    saveSelection();
-    scheduleSave();
+    saveSel(); scheduleSave();
 }
 
 function removeLink() {
-    restoreSelection();
-
-    const sel = window.getSelection();
-    if (!sel.rangeCount) {
-        toast('Place cursor inside a link first', 'warning');
-        return;
-    }
-
-    let node = sel.getRangeAt(0).commonAncestorContainer;
-
-    while (node && node !== q('#edContent')) {
-        if (node.nodeType === 1 && node.tagName === 'A') {
-            const text = document.createTextNode(node.textContent);
-            node.parentNode.replaceChild(text, node);
-            toast('Link removed', 'success');
-            scheduleSave();
-            return;
+    restoreSel();
+    const s = window.getSelection();
+    if (!s.rangeCount) return;
+    let nd = s.getRangeAt(0).commonAncestorContainer;
+    while (nd && nd !== q('#edContent')) {
+        if (nd.nodeType === 1 && nd.tagName === 'A') {
+            nd.parentNode.replaceChild(document.createTextNode(nd.textContent), nd);
+            toast('Link removed', 'success'); scheduleSave(); return;
         }
-        node = node.parentNode;
+        nd = nd.parentNode;
     }
-
-    document.execCommand('unlink', false, null);
-    q('#edContent').focus();
-    scheduleSave();
+    document.execCommand('unlink', false, null); q('#edContent').focus(); scheduleSave();
 }
 
-// ==================== CONTENT HANDLERS ====================
-function onContentChange() {
-    scheduleSave();
-    updateWordCount();
-}
+// ===== CONTENT =====
+function onChange() { scheduleSave(); wc(); }
 
-function handleLinkClick(e) {
+function linkClick(e) {
     if (S.editing) return;
-
-    const link = e.target.closest('a');
-    if (!link) return;
-
+    const a = e.target.closest('a');
+    if (!a) return;
     e.preventDefault();
-    const href = link.getAttribute('href');
-    if (href) {
-        confirm2(
-            'Open Link',
-            `Open this link in a new tab?<br><br><span style="color:var(--blue);word-break:break-all;font-size:13px;">${esc(href)}</span>`,
-            'warn',
-            () => window.open(href, '_blank', 'noopener,noreferrer')
-        );
-    }
+    confirm2('Open Link', `<span style="color:var(--blue);word-break:break-all;font-size:12px;">${esc(a.href)}</span>`, 'warn',
+        () => window.open(a.href, '_blank', 'noopener'));
 }
 
-function showSavedTime(d) {
-    q('#edStatusTxt').textContent = d ? `Saved ${fmtDate(d)}` : 'Saved just now';
+function savedTxt(d) { q('#edSaved').textContent = d ? 'Saved ' + fmtD(d) : 'Saved'; }
+
+function wc() {
+    const t = strip(q('#edContent').innerHTML || '');
+    const w = t.trim() ? t.trim().split(/\s+/).length : 0;
+    q('#edWc').textContent = w + ' words';
+    q('#edCc').textContent = t.length + ' chars';
 }
 
-function updateWordCount() {
-    const text = strip(q('#edContent').innerHTML || '');
-    const words = text.trim() ? text.trim().split(/\s+/).length : 0;
-    const chars = text.length;
-    q('#edWords').textContent = words + ' word' + (words !== 1 ? 's' : '');
-    q('#edChars').textContent = chars + ' char' + (chars !== 1 ? 's' : '');
-}
-
-// ==================== COLOR COMMANDS ====================
-function setTC(c) {
-    restoreSelection();
-    document.execCommand('foreColor', false, c);
-    q('#tcDot').style.background = c;
-    if (c.length === 7) {
-        q('#tcWheel').value = c;
-        q('#tcHex').value = c.toUpperCase();
-    }
-    q('#tcPopup').classList.remove('on');
-    q('#edContent').focus();
-    saveSelection();
-    scheduleSave();
-}
-
-function setHL(c) {
-    restoreSelection();
-    if (c === 'transparent') {
-        document.execCommand('removeFormat', false, null);
-    } else {
-        document.execCommand('hiliteColor', false, c);
-        q('#hlDot').style.background = c;
-        if (c.length === 7) {
-            q('#hlWheel').value = c;
-            q('#hlHex').value = c.toUpperCase();
-        }
-    }
-    q('#hlPopup').classList.remove('on');
-    q('#edContent').focus();
-    saveSelection();
-    scheduleSave();
-}
-
-// ==================== MODAL ====================
+// ===== MODAL =====
 function modal(title, body, btns = []) {
-    const m = q('#modal');
-    m.innerHTML = `
-        <div class="m-head">
-            <h3>${title}</h3>
-            <button class="m-x" id="mx">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <line x1="18" y1="6" x2="6" y2="18"/>
-                    <line x1="6" y1="6" x2="18" y2="18"/>
-                </svg>
-            </button>
-        </div>
+    q('#modal').innerHTML = `
+        <div class="m-head"><h3>${title}</h3><button class="m-x" id="mx"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div>
         <div class="m-body">${body}</div>
-        <div class="m-foot">${btns.map(b =>
-            `<button class="m-btn ${b.c}" data-a="${b.t}">${b.t}</button>`
-        ).join('')}</div>`;
-
-    q('#mx').addEventListener('click', closeModal);
-
-    btns.forEach(b => {
-        const el = m.querySelector(`[data-a="${b.t}"]`);
-        if (el && b.fn) el.addEventListener('click', b.fn);
-    });
-
-    q('#modalShade').classList.add('on');
+        <div class="m-foot">${btns.map(b => `<button class="m-btn ${b.c}" data-a="${b.t}">${b.t}</button>`).join('')}</div>`;
+    q('#mx').onclick = closeModal;
+    btns.forEach(b => { const el = q(`[data-a="${b.t}"]`); if (el) el.onclick = b.fn; });
+    q('#modalBg').classList.add('on');
 }
 
 function confirm2(title, msg, type, fn) {
     const ico = type === 'err'
-        ? '<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>'
-        : '<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>';
-
-    modal(title, `
-        <div class="cf-icon ${type}">${ico}</div>
-        <div class="cf-body">
-            <h4>${title}</h4>
-            <p>${msg}</p>
-        </div>
-    `, [
-        { t: 'Cancel', c: '', fn: closeModal },
-        { t: 'Confirm', c: type === 'err' ? 'dan' : 'pri', fn: () => { closeModal(); fn(); } }
-    ]);
+        ? '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>'
+        : '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>';
+    modal(title, `<div class="cf-ico ${type}">${ico}</div><div class="cf-txt"><h4>${title}</h4><p>${msg}</p></div>`,
+        [{ t: 'Cancel', c: '', fn: closeModal }, { t: 'Confirm', c: type === 'err' ? 'dan' : 'pri', fn: () => { closeModal(); fn(); } }]);
 }
 
-function closeModal() {
-    q('#modalShade').classList.remove('on');
-}
+function closeModal() { q('#modalBg').classList.remove('on'); }
 
-// ==================== TOASTS ====================
+// ===== TOASTS =====
 function toast(msg, type = 'info') {
-    const icons = {
-        success: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#22C55E" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>',
-        error: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#EF4444" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>',
-        warning: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#F59E0B" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>',
-        info: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#7C6EF6" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>'
-    };
-
     const t = document.createElement('div');
     t.className = 'toast ' + type;
-    t.innerHTML = `${icons[type] || icons.info}<span>${msg}</span>`;
+    t.textContent = msg;
     q('#toasts').appendChild(t);
-
-    setTimeout(() => {
-        t.classList.add('out');
-        setTimeout(() => t.remove(), 300);
-    }, 3500);
+    setTimeout(() => { t.classList.add('out'); setTimeout(() => t.remove(), 250); }, 3000);
 }
 
-// ==================== NAVIGATION ====================
-function openSB() {
-    q('#sidebar').classList.add('open');
-    q('#mobShade').classList.add('on');
-}
+// ===== NAV =====
+function closeSB() { q('#sidebar').classList.remove('open'); q('#shade').classList.remove('on'); }
+function showEd() { if (!S.mobile) return; q('#list').classList.add('gone'); q('#editor').classList.remove('gone'); }
+function showList() { if (!S.mobile) return; q('#editor').classList.add('gone'); q('#list').classList.remove('gone'); }
+function goBack() { if (S.editing) { S.editing = false; clearTimeout(S.saveT); applyEdit(); instantSave(); } showList(); }
 
-function closeSB() {
-    q('#sidebar').classList.remove('open');
-    q('#mobShade').classList.remove('on');
-}
-
-function showEd() {
-    if (!S.mobile) return;
-    q('#listPanel').classList.add('gone');
-    q('#editor').classList.remove('gone');
-}
-
-function showList() {
-    if (!S.mobile) return;
-    q('#editor').classList.add('gone');
-    q('#listPanel').classList.remove('gone');
-}
-
-function goBack() {
-    if (S.editing) {
-        S.editing = false;
-        clearTimeout(S.saveT);
-        applyEdit();
-        instantSave();
-    }
-    showList();
-}
-
-// ==================== KEYBOARD ====================
-function handleKeys(e) {
+// ===== KEYS =====
+function keys(e) {
     const m = e.ctrlKey || e.metaKey;
-
-    if (m && e.key === 's') {
-        e.preventDefault();
-        if (S.cur) instantSave();
-    }
-    if (m && e.key === 'n') {
-        e.preventDefault();
-        newNote();
-    }
-    if (m && e.key === 'e') {
-        e.preventDefault();
-        if (S.cur) toggleEdit();
-    }
-    if (m && e.key === 'k') {
-        e.preventDefault();
-        if (S.cur && S.editing) insertLink();
-    }
-    if (e.key === 'Escape') {
-        closeModal();
-        qa('.cp-popup').forEach(p => p.classList.remove('on'));
-        if (S.mobile) closeSB();
-    }
+    if (m && e.key === 's') { e.preventDefault(); if (S.cur) instantSave(); }
+    if (m && e.key === 'n') { e.preventDefault(); newNote(); }
+    if (m && e.key === 'e') { e.preventDefault(); if (S.cur) toggleEdit(); }
+    if (m && e.key === 'k') { e.preventDefault(); if (S.cur && S.editing) insertLink(); }
+    if (e.key === 'Escape') { closeModal(); closeCP(); if (S.mobile) closeSB(); }
 }
 
-// ==================== UTILS ====================
-function esc(s) {
-    const d = document.createElement('div');
-    d.textContent = s;
-    return d.innerHTML;
-}
+// ===== UTILS =====
+function esc(s) { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
+function strip(h) { const d = document.createElement('div'); d.innerHTML = h; return d.textContent || ''; }
 
-function strip(h) {
-    const d = document.createElement('div');
-    d.innerHTML = h;
-    return d.textContent || d.innerText || '';
-}
-
-function okHex(s) {
-    return /^#[0-9A-Fa-f]{6}$/.test(s);
-}
-
-function fmtDate(d) {
+function fmtD(d) {
     if (!d) return '';
-    const dt = new Date(d);
-    const now = new Date();
-    const diff = now - dt;
-
+    const dt = new Date(d), now = new Date(), diff = now - dt;
     if (diff < 60000) return 'just now';
-    if (diff < 3600000) return Math.floor(diff / 60000) + 'm ago';
-    if (diff < 86400000) return Math.floor(diff / 3600000) + 'h ago';
-    if (diff < 604800000) return Math.floor(diff / 86400000) + 'd ago';
-
-    const o = { month: 'short', day: 'numeric' };
-    if (dt.getFullYear() !== now.getFullYear()) o.year = 'numeric';
-    return dt.toLocaleDateString('en-US', o);
+    if (diff < 3600000) return Math.floor(diff / 60000) + 'm';
+    if (diff < 86400000) return Math.floor(diff / 3600000) + 'h';
+    if (diff < 604800000) return Math.floor(diff / 86400000) + 'd';
+    return dt.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 }
