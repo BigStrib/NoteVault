@@ -2,14 +2,21 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="theme-color" content="#000000">
+    <meta name="apple-mobile-web-app-title" content="NoteVault">
+    <link rel="manifest" href="manifest.json">
+    <link rel="apple-touch-icon" href="icon-192.png">
     <title>NoteVault</title>
     <link rel="stylesheet" href="styles.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
 </head>
 <body>
 
-    <!-- ===== LOGIN ===== -->
+    <!-- LOGIN -->
     <div class="login-screen" id="loginScreen">
         <div class="login-glow"></div>
         <div class="login-card">
@@ -41,7 +48,7 @@
         </div>
     </div>
 
-    <!-- ===== APP ===== -->
+    <!-- APP -->
     <div class="app" id="app">
 
         <!-- SIDEBAR -->
@@ -128,8 +135,6 @@
 
         <!-- EDITOR -->
         <main class="editor" id="editor">
-
-            <!-- Blank state -->
             <div class="ed-blank" id="edBlank">
                 <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
                 <h2>Select a note</h2>
@@ -140,10 +145,7 @@
                 </button>
             </div>
 
-            <!-- Active editor -->
             <div class="ed-active" id="edActive">
-
-                <!-- Top bar -->
                 <div class="ed-top">
                     <div class="ed-top-l">
                         <button class="ed-back" id="edBack">
@@ -159,14 +161,12 @@
                     </div>
                 </div>
 
-                <!-- Meta -->
                 <div class="ed-meta">
                     <select id="edFolder"></select>
                     <span id="edWc">0 words</span>
                     <span id="edCc">0 chars</span>
                 </div>
 
-                <!-- Toolbar (scrollable on mobile) -->
                 <div class="tb-wrap" id="tbWrap">
                     <div class="tb" id="toolbar">
                         <select class="tb-select" id="tbHead">
@@ -200,12 +200,8 @@
                         <button class="tb-b" data-c="insertUnorderedList" title="Bullets"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg></button>
                         <button class="tb-b" data-c="insertOrderedList" title="Numbers"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="10" y1="6" x2="21" y2="6"/><line x1="10" y1="12" x2="21" y2="12"/><line x1="10" y1="18" x2="21" y2="18"/><path d="M4 6h1v4"/><path d="M4 10h2"/><path d="M6 18H4c0-1 2-2 2-3s-1-1.5-2-1"/></svg></button>
                         <span class="tb-div"></span>
-                        <button class="tb-b" id="tbTextColor" title="Text Color">
-                            <span class="tb-color-dot" id="tcPreview" style="background:#FF3B3B;">A</span>
-                        </button>
-                        <button class="tb-b" id="tbHighlight" title="Highlight">
-                            <span class="tb-color-dot tb-hl-dot" id="hlPreview" style="background:#FBBF24;"></span>
-                        </button>
+                        <button class="tb-b" id="tbTextColor" title="Text Color"><span class="tb-color-dot" id="tcPreview" style="background:#FF3B3B;">A</span></button>
+                        <button class="tb-b" id="tbHighlight" title="Highlight"><span class="tb-color-dot tb-hl-dot" id="hlPreview" style="background:#FBBF24;"></span></button>
                         <span class="tb-div"></span>
                         <button class="tb-b" id="tbLink" title="Link (Ctrl+K)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg></button>
                         <button class="tb-b" id="tbUnlink" title="Unlink"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/><line x1="2" y1="2" x2="22" y2="22" stroke="#FF3B3B"/></svg></button>
@@ -224,7 +220,7 @@
         </main>
     </div>
 
-    <!-- COLOR PANEL (slides up on mobile, positioned on desktop) -->
+    <!-- COLOR PANEL -->
     <div class="cpanel-shade" id="cpShade"></div>
     <div class="cpanel" id="cpanel">
         <div class="cpanel-head">
