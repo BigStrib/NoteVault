@@ -13,7 +13,7 @@ const S = {
     editing: false, search: '', saveT: null,
     saving: false, range: null, cpMode: null,
     mobile: window.innerWidth <= 768,
-    drag: { active: false },
+    drag: { active: false, startY: 0, threshold: 5, moved: false },
     fullscreen: false
 };
 
@@ -86,35 +86,34 @@ function buildSizeDropdown() {
 }
 
 function injectFullscreenBtn() {
-    // Don't add if already exists
     if (q('#bFullscreen')) return;
-    
-    const edBar = q('#edBar');
-    if (!edBar) return;
-    
+    const topR = q('.ed-top-r');
+    if (!topR) return;
     const btn = document.createElement('button');
-    btn.className = 'eb-b';
+    btn.className = 'ed-act';
     btn.id = 'bFullscreen';
     btn.title = 'Fullscreen (Ctrl+Shift+F)';
     btn.innerHTML = `
-        <span class="fs-expand"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <span class="fs-expand"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <polyline points="15 3 21 3 21 9"/>
             <polyline points="9 21 3 21 3 15"/>
             <line x1="21" y1="3" x2="14" y2="10"/>
             <line x1="3" y1="21" x2="10" y2="14"/>
         </svg></span>
-        <span class="fs-shrink" style="display:none"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <span class="fs-shrink" style="display:none"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <polyline points="4 14 10 14 10 20"/>
             <polyline points="20 10 14 10 14 4"/>
             <line x1="14" y1="10" x2="21" y2="3"/>
             <line x1="3" y1="21" x2="10" y2="14"/>
         </svg></span>`;
-    
-    // Insert after the last button in edBar
-    edBar.appendChild(btn);
-    
-    // Bind click
+    topR.appendChild(btn);
     btn.onclick = toggleFullscreen;
+}
+
+async function initAuth() {
+    const { data: { session } } = await sb.auth.getSession();
+    if (session) { S.user = session.user; enter(); }
+    sb.auth.onAuthStateChange((_, s) => { if (s) S.user = s.user; });
 }
 
 // ===== EVENTS =====
@@ -140,9 +139,6 @@ function bind() {
     q('#bDel').onclick = doDelete;
     q('#edBack').onclick = goBack;
     q('#edFolder').onchange = moveNote;
-
-    const fsBtn = q('#bFullscreen');
-    if (fsBtn) fsBtn.onclick = toggleFullscreen;
 
     q('#edContent').addEventListener('input', onChange);
     q('#edTitle').addEventListener('input', onChange);
@@ -212,11 +208,11 @@ function bind() {
 
 // ===== FULLSCREEN =====
 function toggleFullscreen() {
-    if (S.mobile) return; // Already fullscreen on mobile
+    if (S.mobile) return;
     S.fullscreen = !S.fullscreen;
     const app = q('#app');
     const btn = q('#bFullscreen');
-    
+
     if (S.fullscreen) {
         app.classList.add('fullscreen-doc');
         if (btn) {
@@ -240,9 +236,7 @@ function toggleFullscreen() {
 function applyPixelSize(px) {
     const sel = window.getSelection();
     if (!sel.rangeCount) return;
-
     const range = sel.getRangeAt(0);
-
     if (range.collapsed) {
         const span = document.createElement('span');
         span.style.fontSize = px + 'px';
@@ -255,16 +249,13 @@ function applyPixelSize(px) {
         sel.addRange(nr);
         return;
     }
-
     document.execCommand('fontSize', false, '1');
     const editor = q('#edContent');
     const fonts = editor.querySelectorAll('font[size="1"]');
     fonts.forEach(font => {
         const span = document.createElement('span');
         span.style.fontSize = px + 'px';
-        while (font.firstChild) {
-            span.appendChild(font.firstChild);
-        }
+        while (font.firstChild) span.appendChild(font.firstChild);
         font.parentNode.replaceChild(span, font);
     });
 }
@@ -274,30 +265,21 @@ function removeInlineFontSize() {
     if (!sel.rangeCount) return;
     const range = sel.getRangeAt(0);
     if (range.collapsed) return;
-
-    // Use fontSize 7 as a marker to find affected elements
     document.execCommand('fontSize', false, '7');
     const editor = q('#edContent');
-
-    // Remove font tags with size="7"
     const fonts = editor.querySelectorAll('font[size="7"]');
     fonts.forEach(font => {
-        // Unwrap all nested spans with fontSize too
         const spans = font.querySelectorAll('span[style*="font-size"]');
         spans.forEach(sp => {
             sp.style.fontSize = '';
             if (!sp.getAttribute('style')?.trim()) {
-                // Unwrap span entirely
                 while (sp.firstChild) sp.parentNode.insertBefore(sp.firstChild, sp);
                 sp.remove();
             }
         });
-        // Unwrap the font tag
         while (font.firstChild) font.parentNode.insertBefore(font.firstChild, font);
         font.remove();
     });
-
-    // Also strip font-size from any remaining spans in selection
     const container = range.commonAncestorContainer;
     const root = container.nodeType === 1 ? container : container.parentNode;
     if (root) {
@@ -317,25 +299,21 @@ function removeInlineFontSize() {
 // ===== TOOLBAR STATE =====
 function updateToolbarState() {
     if (!S.editing) return;
-
     const ed = q('#edContent');
     const sel = window.getSelection();
     if (!sel.rangeCount || !ed.contains(sel.anchorNode)) return;
 
-    // Toggle commands
     const toggleCmds = [
         'bold', 'italic', 'underline', 'strikeThrough',
         'subscript', 'superscript',
         'insertUnorderedList', 'insertOrderedList',
         'justifyLeft', 'justifyCenter', 'justifyRight', 'justifyFull'
     ];
-
     toggleCmds.forEach(cmd => {
         const btn = q(`.tb-b[data-c="${cmd}"]`);
         if (btn) btn.classList.toggle('active', document.queryCommandState(cmd));
     });
 
-    // Heading dropdown
     const headSel = q('#tbHead');
     if (headSel) {
         const block = document.queryCommandValue('formatBlock');
@@ -344,7 +322,6 @@ function updateToolbarState() {
         headSel.value = validHeadings.includes(normalized) ? normalized : '';
     }
 
-    // Size dropdown
     const sizeSel = q('#tbSize');
     if (sizeSel) {
         const computedSize = getComputedFontSize();
@@ -357,7 +334,6 @@ function updateToolbarState() {
         }
     }
 
-    // Link buttons
     let inLink = false;
     let nd = sel.anchorNode;
     while (nd && nd !== ed) {
@@ -391,7 +367,7 @@ function onResize() {
             S.fullscreen = false;
             q('#app').classList.remove('fullscreen-doc');
             const btn = q('#bFullscreen');
-            if (btn) { btn.classList.remove('on'); q('#fsIconExpand').style.display = ''; q('#fsIconShrink').style.display = 'none'; }
+            if (btn) { btn.classList.remove('on'); q('.fs-expand').style.display = ''; q('.fs-shrink').style.display = 'none'; }
         }
         if (S.cur) {
             q('#list').classList.add('gone');
@@ -492,28 +468,62 @@ function renderFolders() {
         d.dataset.fid = f.id;
         d.dataset.idx = idx;
         d.innerHTML = `
-            <div class="fl-grip" title="Drag to reorder">
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <circle cx="9" cy="5" r="1.5"/><circle cx="15" cy="5" r="1.5"/>
-                    <circle cx="9" cy="12" r="1.5"/><circle cx="15" cy="12" r="1.5"/>
-                    <circle cx="9" cy="19" r="1.5"/><circle cx="15" cy="19" r="1.5"/>
-                </svg>
-            </div>
             <span class="fl-dot" style="background:${f.color}"></span>
             <span class="fl-name">${esc(f.name)}</span>
             <span class="fl-cnt">${cnt}</span>
             <div class="fl-acts">
-                <button class="fl-ab fe"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>
-                <button class="fl-ab dl fd"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button>
+                <button class="fl-ab fe" title="Edit folder"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>
+                <button class="fl-ab dl fd" title="Delete folder"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button>
             </div>`;
 
-        d.onclick = e => { if (e.target.closest('.fl-ab') || e.target.closest('.fl-grip')) return; setFolderFilter(f.id, f.name); };
         d.querySelector('.fe').onclick = e => { e.stopPropagation(); folderModal(f); };
         d.querySelector('.fd').onclick = e => { e.stopPropagation(); delFolder(f); };
 
-        const grip = d.querySelector('.fl-grip');
-        grip.addEventListener('mousedown', e => dragStart(e, d, idx));
-        grip.addEventListener('touchstart', e => dragStart(e, d, idx), { passive: false });
+        // Unified press handler: short press = click, long press / drag = reorder
+        let pressTimer = null;
+        let isDragging = false;
+
+        const onDown = (e) => {
+            if (e.target.closest('.fl-ab')) return;
+            const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+            S.drag.startY = clientY;
+            S.drag.moved = false;
+            isDragging = false;
+
+            pressTimer = setTimeout(() => {
+                isDragging = true;
+                dragStart(e, d, idx);
+            }, 300);
+
+            const onMoveCheck = (ev) => {
+                const cy = ev.touches ? ev.touches[0].clientY : ev.clientY;
+                if (Math.abs(cy - S.drag.startY) > S.drag.threshold && !isDragging) {
+                    clearTimeout(pressTimer);
+                    isDragging = true;
+                    dragStart(e, d, idx);
+                }
+            };
+
+            const onUp = () => {
+                clearTimeout(pressTimer);
+                document.removeEventListener('mousemove', onMoveCheck);
+                document.removeEventListener('touchmove', onMoveCheck);
+                document.removeEventListener('mouseup', onUp);
+                document.removeEventListener('touchend', onUp);
+
+                if (!isDragging && !S.drag.active) {
+                    setFolderFilter(f.id, f.name);
+                }
+            };
+
+            document.addEventListener('mousemove', onMoveCheck);
+            document.addEventListener('touchmove', onMoveCheck, { passive: false });
+            document.addEventListener('mouseup', onUp);
+            document.addEventListener('touchend', onUp);
+        };
+
+        d.addEventListener('mousedown', onDown);
+        d.addEventListener('touchstart', onDown, { passive: false });
         c.appendChild(d);
     });
     updateFolderSel();
@@ -521,11 +531,14 @@ function renderFolders() {
 
 // ===== DRAG =====
 function dragStart(e, el, idx) {
-    e.preventDefault(); e.stopPropagation();
+    if (S.drag.active) return;
+    e.preventDefault();
+
     const container = q('#fList');
     const rect = el.getBoundingClientRect();
     const clientY = e.touches ? e.touches[0].clientY : e.clientY;
 
+    // Animate the element lifting up
     const clone = el.cloneNode(true);
     clone.classList.add('fl-dragging');
     clone.style.width = rect.width + 'px';
@@ -539,20 +552,29 @@ function dragStart(e, el, idx) {
     el.parentNode.insertBefore(ph, el);
     el.classList.add('fl-hidden');
 
+    // Collect positions of all items
+    const items = Array.from(container.querySelectorAll('.fl-item:not(.fl-hidden)')).map((item, i) => {
+        const r = item.getBoundingClientRect();
+        return { el: item, top: r.top, mid: r.top + r.height / 2, height: r.height, idx: i };
+    });
+
     S.drag = {
         active: true, el, clone, ph,
         offsetY: clientY - rect.top,
         startIdx: idx, curIdx: idx,
-        items: Array.from(container.querySelectorAll('.fl-item')).map((item, i) => {
-            const r = item.getBoundingClientRect();
-            return { el: item, mid: r.top + r.height / 2, idx: i };
-        })
+        startY: S.drag.startY,
+        threshold: S.drag.threshold,
+        moved: true,
+        items
     };
 
     document.addEventListener('mousemove', dragMove);
     document.addEventListener('mouseup', dragEnd);
     document.addEventListener('touchmove', dragMove, { passive: false });
     document.addEventListener('touchend', dragEnd);
+
+    // Haptic feedback on mobile
+    if (navigator.vibrate) navigator.vibrate(30);
 }
 
 function dragMove(e) {
@@ -561,19 +583,40 @@ function dragMove(e) {
     const clientY = e.touches ? e.touches[0].clientY : e.clientY;
     S.drag.clone.style.top = (clientY - S.drag.offsetY) + 'px';
 
-    let newIdx = S.drag.curIdx;
-    for (let i = 0; i < S.drag.items.length; i++) {
-        if (i === S.drag.startIdx) continue;
-        if (clientY < S.drag.items[i].mid && i < S.drag.curIdx) { newIdx = i; break; }
-        if (clientY > S.drag.items[i].mid && i > S.drag.curIdx) newIdx = i;
+    // Find new position
+    const container = q('#fList');
+    const children = Array.from(container.querySelectorAll('.fl-item:not(.fl-hidden)'));
+    let newIdx = children.length;
+
+    for (let i = 0; i < children.length; i++) {
+        const r = children[i].getBoundingClientRect();
+        const mid = r.top + r.height / 2;
+        if (clientY < mid) {
+            newIdx = i;
+            break;
+        }
     }
 
     if (newIdx !== S.drag.curIdx) {
         S.drag.curIdx = newIdx;
-        const container = q('#fList');
-        const visible = Array.from(container.querySelectorAll('.fl-item:not(.fl-hidden)'));
-        if (newIdx >= visible.length) container.appendChild(S.drag.ph);
-        else container.insertBefore(S.drag.ph, visible[newIdx] || null);
+
+        // Smoothly animate placeholder position
+        if (newIdx >= children.length) {
+            container.appendChild(S.drag.ph);
+        } else {
+            container.insertBefore(S.drag.ph, children[newIdx]);
+        }
+
+        // Animate other items moving out of the way
+        children.forEach(child => {
+            child.style.transition = 'transform 0.2s ease';
+        });
+
+        requestAnimationFrame(() => {
+            children.forEach(child => {
+                child.style.transition = '';
+            });
+        });
     }
 }
 
@@ -584,12 +627,21 @@ function dragEnd() {
     document.removeEventListener('touchmove', dragMove);
     document.removeEventListener('touchend', dragEnd);
 
-    S.drag.clone.remove();
-    S.drag.ph.remove();
-    S.drag.el.classList.remove('fl-hidden');
-    const { startIdx, curIdx } = S.drag;
-    S.drag.active = false;
-    if (startIdx !== curIdx) reorderFolders(startIdx, curIdx);
+    // Animate clone back into place
+    const phRect = S.drag.ph.getBoundingClientRect();
+    S.drag.clone.style.transition = 'top 0.2s ease, opacity 0.2s ease, box-shadow 0.2s ease';
+    S.drag.clone.style.top = phRect.top + 'px';
+    S.drag.clone.style.boxShadow = 'none';
+    S.drag.clone.style.opacity = '0.6';
+
+    setTimeout(() => {
+        S.drag.clone.remove();
+        S.drag.ph.remove();
+        S.drag.el.classList.remove('fl-hidden');
+        const { startIdx, curIdx } = S.drag;
+        S.drag.active = false;
+        if (startIdx !== curIdx) reorderFolders(startIdx, curIdx);
+    }, 200);
 }
 
 async function reorderFolders(from, to) {
@@ -1002,7 +1054,7 @@ function keys(e) {
     if (m && e.key === 'n') { e.preventDefault(); newNote(); }
     if (m && e.key === 'e') { e.preventDefault(); if (S.cur) toggleEdit(); }
     if (m && e.key === 'k') { e.preventDefault(); if (S.cur && S.editing) insertLink(); }
-    if (m && e.shiftKey && e.key === 'F') { e.preventDefault(); if (S.cur && !S.mobile) toggleFullscreen(); }
+    if (m && e.shiftKey && (e.key === 'F' || e.key === 'f')) { e.preventDefault(); if (S.cur && !S.mobile) toggleFullscreen(); }
     if (e.key === 'Escape') {
         if (S.fullscreen) { toggleFullscreen(); return; }
         closeModal(); closeCP(); if (S.mobile) closeSB();
