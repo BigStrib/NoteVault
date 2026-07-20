@@ -1,9 +1,9 @@
 {
-    "name": "SwipeNote",
-    "short_name": "SwipeNote",
-    "description": "Write&Swipe",
-    "start_url": "./",
-    "scope": "./",
+    "name": "NoteVault",
+    "short_name": "NoteVault",
+    "description": "Secure digital notebook",
+    "start_url": "/NoteVault/",
+    "scope": "/NoteVault/",
     "display": "standalone",
     "orientation": "any",
     "background_color": "#000000",
@@ -12,7 +12,7 @@
         {
             "src": "images/icon.png",
             "sizes": "any",
-            "type": "image/png"
+            "type": "image/png+xml"
         }
     ]
 }
